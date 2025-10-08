@@ -1293,6 +1293,25 @@ class LookbookApp {
         
         if (startIndex === 0) {
             categoriesList.innerHTML = '';
+            
+            // Handle empty categories case
+            if (this.categories.length === 0) {
+                categoriesList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <span class="material-icons">folder_open</span>
+                        </div>
+                        <h3>No Categories Yet</h3>
+                        <p>Create your first category to organize your outfits!</p>
+                        <button class="btn-primary" onclick="window.app.navigateTo('create-category')">
+                            <span class="material-icons">add</span>
+                            <span>Create Category</span>
+                        </button>
+                    </div>
+                `;
+                console.log('No categories found, showing empty state');
+                return;
+            }
         }
         
         // Pre-calculate outfit counts to avoid repeated filtering
