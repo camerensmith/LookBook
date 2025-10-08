@@ -148,13 +148,17 @@ class LookbookApp {
     async saveToFirestore(collection, data) {
         if (!this.db || !this.user) {
             console.log('Firestore not available or user not signed in, using localStorage');
+            console.log('DB available:', !!this.db, 'User signed in:', !!this.user);
             return false;
         }
         
         try {
             this.updateSyncStatus('syncing', 'Saving...');
+            console.log(`Attempting to save ${collection} to Firestore for user:`, this.user.uid);
             
             const docRef = this.db.collection('users').doc(this.user.uid).collection(collection).doc('data');
+            console.log('Document reference:', docRef.path);
+            
             await docRef.set({
                 data: data,
                 lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
@@ -162,11 +166,17 @@ class LookbookApp {
             });
             
             this.updateSyncStatus('synced');
-            console.log(`Data saved to Firestore: ${collection}`);
+            console.log(`✅ Data saved to Firestore: ${collection}`, data);
             return true;
         } catch (error) {
-            console.error(`Error saving to Firestore (${collection}):`, error);
-            this.updateSyncStatus('error', 'Save failed');
+            console.error(`❌ Error saving to Firestore (${collection}):`, error);
+            console.error('Error details:', {
+                code: error.code,
+                message: error.message,
+                user: this.user?.uid,
+                collection: collection
+            });
+            this.updateSyncStatus('error', `Save failed: ${error.message}`);
             return false;
         }
     }
