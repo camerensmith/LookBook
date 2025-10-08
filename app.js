@@ -2568,11 +2568,26 @@ class LookbookApp {
                 itemElement.style.left = item.x + 'px';
                 itemElement.style.top = item.y + 'px';
                 
-                const imageSrc = item.image || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yMCAyMEg2MFY2MEgyMFYyMFoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+';
+                // Handle both data structures: item.image or item.article.image
+                const imageSrc = item.image || 
+                                (item.article && (item.article.processedImage || item.article.image)) || 
+                                'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yMCAyMEg2MFY2MEgyMFYyMFoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+';
+                
+                console.log('Rendering outfit item:', {
+                    itemId: item.id,
+                    hasImage: !!item.image,
+                    hasArticle: !!item.article,
+                    articleImage: item.article?.image,
+                    articleProcessedImage: item.article?.processedImage,
+                    finalImageSrc: imageSrc.substring(0, 50) + '...'
+                });
+                
+                // Handle both data structures for name: item.name or item.article.name
+                const itemName = item.name || (item.article && item.article.name) || 'Unknown Item';
                 
                 itemElement.innerHTML = `
-                    <img src="${imageSrc}" alt="${this.escapeHtml(item.name)}" class="outfit-item-image">
-                    <div class="outfit-item-name">${this.escapeHtml(item.name)}</div>
+                    <img src="${imageSrc}" alt="${this.escapeHtml(itemName)}" class="outfit-item-image">
+                    <div class="outfit-item-name">${this.escapeHtml(itemName)}</div>
                     <button class="remove-item-btn" onclick="window.app.removeOutfitItem('${item.id}')">
                         <span class="material-icons">close</span>
                     </button>
@@ -2847,21 +2862,13 @@ class LookbookApp {
 
     clearOutfit() {
         try {
-            this.currentOutfitItems.forEach(item => {
-                const element = document.getElementById(`outfit-item-${item.id}`);
-                if (element) element.remove();
-            });
-            
             this.currentOutfitItems = [];
             this.updateSaveButton();
             
-            // Show placeholder
+            // Clear canvas and show placeholder
             const canvas = document.getElementById('outfitCanvas');
             if (canvas) {
-                const placeholder = document.createElement('p');
-                placeholder.className = 'placeholder-text';
-                placeholder.textContent = 'Drag articles here to build your outfit';
-                canvas.appendChild(placeholder);
+                canvas.innerHTML = '<p class="placeholder-text">Drag articles here to build your outfit</p>';
             }
             
             console.log('Outfit cleared');

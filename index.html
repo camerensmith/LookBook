@@ -213,15 +213,16 @@
 
             <!-- Category Detail View -->
             <div id="categoryDetailView" class="view">
-                <h2 id="categoryDetailTitle">Category</h2>
+                <div class="category-detail-header">
+                    <h2 id="categoryDetailTitle">Category</h2>
+                    <button class="delete-category-btn" onclick="window.app.deleteCategory(window.app.currentCategory.id)" title="Delete Category">
+                        <span class="material-icons">delete</span>
+                    </button>
+                </div>
                 <div class="category-actions">
                     <button class="btn-primary" onclick="window.app.navigateTo('add-outfit')">
                         <span class="material-icons">add</span>
                         <span>Add Outfit</span>
-                    </button>
-                    <button class="delete-btn" onclick="window.app.deleteCategory(window.app.currentCategory.id)">
-                        <span class="material-icons">delete</span>
-                        <span>Delete Category</span>
                     </button>
                 </div>
                 <div id="categoryOutfits" class="category-outfits">
@@ -309,7 +310,12 @@
 
             <!-- Collection Detail View -->
             <div id="collectionDetailView" class="view">
-                <h2 id="collectionDetailTitle">Collection</h2>
+                <div class="collection-detail-header">
+                    <h2 id="collectionDetailTitle">Collection</h2>
+                    <button class="delete-collection-btn" onclick="window.app.deleteCollection(window.app.currentCollection.id)" title="Delete Collection">
+                        <span class="material-icons">delete</span>
+                    </button>
+                </div>
                 <div class="collection-actions">
                     <button class="btn-primary" onclick="window.app.showAddCategoryToCollection()">
                         <span class="material-icons">add</span>
@@ -318,10 +324,6 @@
                     <button class="btn-secondary" onclick="window.app.editCollection()">
                         <span class="material-icons">edit</span>
                         <span>Edit Collection</span>
-                    </button>
-                    <button class="delete-btn" onclick="window.app.deleteCollection(window.app.currentCollection.id)">
-                        <span class="material-icons">delete</span>
-                        <span>Delete Collection</span>
                     </button>
                 </div>
                 <div id="collectionCategories" class="collection-categories-list">
