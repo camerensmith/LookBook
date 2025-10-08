@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Lookbook">
+    <meta name="theme-color" content="#6366f1">
+    <title>Lookbook - Your Personal Style Manager</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <h1>Lookbook</h1>
+            <div>
+                <button id="authBtn" class="menu-btn">Sign in</button>
+                <button id="menuBtn" class="menu-btn">☰</button>
+            </div>
+        </header>
+
+        <!-- Main Navigation -->
+        <nav id="mainNav" class="main-nav">
+            <button class="nav-btn" data-action="create-category">Create Category</button>
+            <button class="nav-btn" data-action="add-outfit">Add Outfit</button>
+            <button class="nav-btn" data-action="add-article">Add Article</button>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main id="mainContent" class="main-content">
+            <!-- Categories View -->
+            <div id="categoriesView" class="view active">
+                <h2>Your Categories</h2>
+                <div id="categoriesList" class="categories-list">
+                    <!-- Categories will be populated here -->
+                </div>
+            </div>
+
+            <!-- Create Category View -->
+            <div id="createCategoryView" class="view">
+                <h2>Create New Category</h2>
+                <form id="categoryForm" class="form">
+                    <input type="text" id="categoryName" placeholder="Category Name (e.g., Office, Work, School)" required>
+                    <button type="submit" class="btn-primary">Create Category</button>
+                </form>
+                <button class="btn-secondary back-btn" data-back="categories">Back</button>
+            </div>
+
+            <!-- Add Article View -->
+            <div id="addArticleView" class="view">
+                <h2>Add New Article</h2>
+                <div class="camera-section">
+                    <button id="cameraBtn" class="btn-primary camera-btn">📷 Take Photo</button>
+                    <div id="cameraPreview" class="camera-preview hidden">
+                        <img id="capturedImage" alt="Captured photo">
+                        <div class="camera-controls">
+                            <button id="retakeBtn" class="btn-secondary">Retake</button>
+                            <button id="processBtn" class="btn-primary">Remove Background</button>
+                        </div>
+                    </div>
+                    <div id="processedImage" class="processed-image hidden">
+                        <img id="finalImage" alt="Processed image">
+                        <div class="image-controls">
+                            <button id="reprocessBtn" class="btn-secondary">Reprocess</button>
+                            <button id="saveBtn" class="btn-primary">Save Article</button>
+                        </div>
+                    </div>
+                </div>
+                <form id="articleForm" class="form hidden">
+                    <input type="text" id="articleName" placeholder="Article Name" required>
+                    <input type="text" id="articleTags" placeholder="Tags (comma separated)">
+                    <button type="submit" class="btn-primary">Save Article</button>
+                </form>
+                <button class="btn-secondary back-btn" data-back="categories">Back</button>
+            </div>
+
+            <!-- Add Outfit View -->
+            <div id="addOutfitView" class="view">
+                <h2>Create New Outfit</h2>
+                <div class="outfit-builder">
+                    <div class="article-selector">
+                        <input type="text" id="searchArticles" placeholder="Search articles by name or tags...">
+                        <div id="articlesList" class="articles-list">
+                            <!-- Articles will be populated here -->
+                        </div>
+                    </div>
+                    <div class="outfit-canvas">
+                        <h3>Your Outfit</h3>
+                        <div id="outfitCanvas" class="outfit-canvas-area">
+                            <p class="placeholder-text">Drag articles here to build your outfit</p>
+                        </div>
+                        <div class="outfit-controls">
+                            <button id="clearOutfitBtn" class="btn-secondary">Clear All</button>
+                            <button id="saveOutfitBtn" class="btn-primary" disabled>Save Outfit</button>
+                        </div>
+                    </div>
+                </div>
+                <form id="outfitForm" class="form hidden">
+                    <input type="text" id="outfitName" placeholder="Outfit Name" required>
+                    <select id="outfitCategory" required>
+                        <option value="">Select Category</option>
+                    </select>
+                    <button type="submit" class="btn-primary">Save Outfit</button>
+                </form>
+                <button class="btn-secondary back-btn" data-back="categories">Back</button>
+            </div>
+
+            <!-- Category Detail View -->
+            <div id="categoryDetailView" class="view">
+                <h2 id="categoryDetailTitle">Category</h2>
+                <div id="categoryOutfits" class="category-outfits">
+                    <!-- Outfits in this category will be populated here -->
+                </div>
+                <button class="btn-secondary back-btn" data-back="categories">Back</button>
+            </div>
+
+            <!-- Outfit Detail View -->
+            <div id="outfitDetailView" class="view">
+                <h2 id="outfitDetailTitle">Outfit</h2>
+                <div id="outfitDisplay" class="outfit-display">
+                    <!-- Outfit will be displayed here -->
+                </div>
+                <div class="outfit-actions">
+                    <button id="editOutfitBtn" class="btn-secondary">Edit</button>
+                    <button id="deleteOutfitBtn" class="btn-danger">Delete</button>
+                </div>
+                <button class="btn-secondary back-btn" data-back="category">Back</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Camera Modal -->
+    <div id="cameraModal" class="modal hidden">
+        <div class="modal-content">
+            <video id="cameraVideo" autoplay playsinline></video>
+            <div class="camera-controls">
+                <button id="captureBtn" class="btn-primary">📸 Capture</button>
+                <button id="closeCameraBtn" class="btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth Modal -->
+    <div id="authModal" class="modal hidden">
+        <div class="modal-content" style="max-width:420px;">
+            <h2 style="margin-bottom:1rem;">Sign in to Lookbook</h2>
+            <div class="camera-controls" style="margin:0 0 1rem 0;">
+                <button id="googleSignInBtn" class="btn-primary" style="width:100%;">Continue with Google</button>
+            </div>
+            <div class="camera-controls" style="margin:0 0 1rem 0;">
+                <button id="appleSignInBtn" class="btn-secondary" style="width:100%;">Continue with Apple</button>
+            </div>
+            <div class="form" style="margin:0 0 0.5rem 0;padding:1rem;">
+                <input type="email" id="authEmail" placeholder="Email">
+                <input type="password" id="authPassword" placeholder="Password">
+                <button id="emailAuthBtn" class="btn-primary">Sign in</button>
+                <button id="toggleAuthModeBtn" class="btn-secondary">Switch to Sign up</button>
+            </div>
+            <div class="camera-controls">
+                <button id="closeAuthBtn" class="btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loading-spinner"></div>
+        <p>Processing image...</p>
+    </div>
+
+    <!-- Firebase (compat) - insert your config in app.js -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

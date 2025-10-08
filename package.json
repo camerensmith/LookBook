@@ -1,0 +1,40 @@
+{
+  "name": "lookbook-pwa",
+  "version": "1.0.0",
+  "description": "A Progressive Web App for managing clothing and creating outfits",
+  "main": "index.html",
+  "scripts": {
+    "start": "http-server -p 8000 -c-1",
+    "dev": "http-server -p 8000 -c-1 --cors",
+    "build": "echo 'No build step required for this PWA'",
+    "test": "echo 'No tests specified'"
+  },
+  "keywords": [
+    "pwa",
+    "fashion",
+    "outfit",
+    "clothing",
+    "progressive-web-app",
+    "ios",
+    "mobile"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/lookbook-pwa.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/lookbook-pwa/issues"
+  },
+  "homepage": "https://github.com/yourusername/lookbook-pwa#readme",
+  "dependencies": {
+    "firebase": "^12.3.0"
+  }
+}
