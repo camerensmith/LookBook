@@ -573,17 +573,32 @@ class LookbookApp {
             if (googleBtn) {
                 googleBtn.addEventListener('click', async () => {
                     try {
+                        console.log('Google sign-in button clicked');
+                        console.log('Firebase app:', firebase.app());
+                        console.log('Firebase auth:', firebase.auth());
+                        
                         const provider = new firebase.auth.GoogleAuthProvider();
+                        console.log('Google provider created:', provider);
+                        
                         // Try popup first, fallback to redirect if popup fails
                         try {
-                            await firebase.auth().signInWithPopup(provider);
+                            console.log('Attempting popup sign-in...');
+                            const result = await firebase.auth().signInWithPopup(provider);
+                            console.log('Popup sign-in successful:', result);
                         } catch (popupError) {
                             console.warn('Popup failed, trying redirect:', popupError);
+                            console.log('Error details:', {
+                                code: popupError.code,
+                                message: popupError.message,
+                                email: popupError.email,
+                                credential: popupError.credential
+                            });
                             await firebase.auth().signInWithRedirect(provider);
                         }
                     } catch (err) {
                         console.error('Google sign-in error:', err);
-                        alert('Google sign-in failed. Please check your browser settings and try again.');
+                        console.log('Full error object:', err);
+                        alert(`Google sign-in failed: ${err.message || err.code || 'Unknown error'}`);
                     }
                 });
             }
@@ -653,6 +668,8 @@ class LookbookApp {
                     'addOutfit': 'addOutfit',
                     'add-article': 'addArticle',
                     'addArticle': 'addArticle',
+                    'view-articles': 'viewArticles',
+                    'viewArticles': 'viewArticles',
                     'category': 'categoryDetail',
                     'categoryDetail': 'categoryDetail',
                     'outfit': 'outfitDetail',
@@ -694,6 +711,9 @@ class LookbookApp {
                     break;
                 case 'addArticle':
                     this.resetArticleForm();
+                    break;
+                case 'viewArticles':
+                    this.renderArticlesGrid();
                     break;
             }
         } catch (error) {
@@ -1571,8 +1591,8 @@ class LookbookApp {
             
             console.log('Saving outfit:', { name, categoryId, items: this.currentOutfitItems.length });
             
-            if (!name || !categoryId || this.currentOutfitItems.length === 0) {
-                alert('Please provide a name, select a category, and add at least one article');
+            if (!name || this.currentOutfitItems.length === 0) {
+                alert('Please provide a name and add at least one article');
                 return;
             }
 
@@ -1605,7 +1625,7 @@ class LookbookApp {
                 const outfit = {
                     id: Date.now().toString(),
                     name: name,
-                    categoryId: categoryId,
+                    categoryId: categoryId || null, // Allow null for uncategorized outfits
                     items: this.currentOutfitItems.map(item => ({
                         articleId: item.articleId,
                         x: item.x,
@@ -1799,6 +1819,72 @@ class LookbookApp {
             console.log('Create New card added');
         } catch (error) {
             console.error('Error adding Create New card:', error);
+        }
+    }
+    
+    renderArticlesGrid() {
+        try {
+            const articlesGrid = document.getElementById('articlesGrid');
+            if (!articlesGrid) {
+                console.error('Articles grid element not found');
+                return;
+            }
+            
+            console.log('Rendering articles grid, count:', this.articles.length);
+            
+            if (this.articles.length === 0) {
+                articlesGrid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <span class="material-icons">inventory_2</span>
+                        </div>
+                        <h3>No Articles Yet</h3>
+                        <p>Add your first article to start building outfits!</p>
+                        <button class="btn-primary" onclick="window.app.navigateTo('add-article')">
+                            <span class="material-icons">add</span>
+                            <span>Add Article</span>
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            articlesGrid.innerHTML = '';
+            
+            this.articles.forEach(article => {
+                const articleCard = document.createElement('div');
+                articleCard.className = 'article-card';
+                
+                // Add touch-friendly event handling
+                articleCard.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    articleCard.style.transform = 'scale(0.95)';
+                    articleCard.style.opacity = '0.8';
+                }, { passive: false });
+                
+                articleCard.addEventListener('touchend', (e) => {
+                    articleCard.style.transform = '';
+                    articleCard.style.opacity = '';
+                });
+                
+                const imageSrc = article.image || article.processedImage || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yMCAyMEg0MFY0MEgyMFYyMFoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+';
+                
+                articleCard.innerHTML = `
+                    <img src="${imageSrc}" alt="${this.escapeHtml(article.name)}" class="article-image">
+                    <div class="article-name">${this.escapeHtml(article.name)}</div>
+                    <div class="article-tags">${this.escapeHtml(article.tags || '')}</div>
+                `;
+                
+                articlesGrid.appendChild(articleCard);
+            });
+            
+            console.log('Articles grid rendered successfully');
+        } catch (error) {
+            console.error('Error rendering articles grid:', error);
+            const articlesGrid = document.getElementById('articlesGrid');
+            if (articlesGrid) {
+                articlesGrid.innerHTML = '<div class="error-message">Failed to load articles</div>';
+            }
         }
     }
     

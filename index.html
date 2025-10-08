@@ -50,13 +50,17 @@
                 <span class="material-icons">folder_plus</span>
                 <span>Category</span>
             </button>
-            <button class="nav-btn mui-btn" data-action="add-outfit">
-                <span class="material-icons">checkroom</span>
-                <span>Add Outfit</span>
-            </button>
+                    <button class="nav-btn mui-btn" data-action="add-outfit">
+                        <span class="material-icons">checkroom</span>
+                        <span>Add/View Outfits</span>
+                    </button>
             <button class="nav-btn mui-btn" data-action="add-article">
                 <span class="material-icons">add_a_photo</span>
                 <span>Add Article</span>
+            </button>
+            <button class="nav-btn mui-btn" data-action="view-articles">
+                <span class="material-icons">inventory</span>
+                <span>Add/View Articles</span>
             </button>
         </nav>
 
@@ -155,13 +159,13 @@
                         </div>
                     </div>
                 </div>
-                <form id="outfitForm" class="form hidden">
-                    <input type="text" id="outfitName" placeholder="Outfit Name" required>
-                    <select id="outfitCategory" required>
-                        <option value="">Select Category</option>
-                    </select>
-                    <button type="submit" class="btn-primary">Save Outfit</button>
-                </form>
+                        <form id="outfitForm" class="form hidden">
+                            <input type="text" id="outfitName" placeholder="Outfit Name" required>
+                            <select id="outfitCategory">
+                                <option value="">Select Category (Optional)</option>
+                            </select>
+                            <button type="submit" class="btn-primary">Save Outfit</button>
+                        </form>
                 <button class="btn-secondary back-btn" data-back="categories">Back</button>
             </div>
 
@@ -174,18 +178,33 @@
                 <button class="btn-secondary back-btn" data-back="categories">Back</button>
             </div>
 
-            <!-- Outfit Detail View -->
-            <div id="outfitDetailView" class="view">
-                <h2 id="outfitDetailTitle">Outfit</h2>
-                <div id="outfitDisplay" class="outfit-display">
-                    <!-- Outfit will be displayed here -->
-                </div>
-                <div class="outfit-actions">
-                    <button id="editOutfitBtn" class="btn-secondary">Edit</button>
-                    <button id="deleteOutfitBtn" class="btn-danger">Delete</button>
-                </div>
-                <button class="btn-secondary back-btn" data-back="category">Back</button>
-            </div>
+                    <!-- Outfit Detail View -->
+                    <div id="outfitDetailView" class="view">
+                        <h2 id="outfitDetailTitle">Outfit</h2>
+                        <div id="outfitDisplay" class="outfit-display">
+                            <!-- Outfit will be displayed here -->
+                        </div>
+                        <div class="outfit-actions">
+                            <button id="editOutfitBtn" class="btn-secondary">Edit</button>
+                            <button id="deleteOutfitBtn" class="btn-danger">Delete</button>
+                        </div>
+                        <button class="btn-secondary back-btn" data-back="category">Back</button>
+                    </div>
+
+                    <!-- View Articles View -->
+                    <div id="viewArticlesView" class="view">
+                        <h2>Your Articles</h2>
+                        <div class="articles-header">
+                            <button class="btn-primary" onclick="window.app.navigateTo('add-article')">
+                                <span class="material-icons">add</span>
+                                <span>Add New Article</span>
+                            </button>
+                        </div>
+                        <div id="articlesGrid" class="articles-grid">
+                            <!-- Articles will be populated here -->
+                        </div>
+                        <button class="btn-secondary back-btn" data-back="categories">Back</button>
+                    </div>
         </main>
     </div>
 
