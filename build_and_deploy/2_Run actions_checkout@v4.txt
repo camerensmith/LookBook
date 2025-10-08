@@ -1,0 +1,69 @@
+﻿2025-10-08T17:01:55.6326857Z ##[group]Run actions/checkout@v4
+2025-10-08T17:01:55.6327905Z with:
+2025-10-08T17:01:55.6328670Z   repository: camerensmith/LookBook
+2025-10-08T17:01:55.6329552Z   token: ***
+2025-10-08T17:01:55.6330121Z   ssh-strict: true
+2025-10-08T17:01:55.6330679Z   ssh-user: git
+2025-10-08T17:01:55.6331248Z   persist-credentials: true
+2025-10-08T17:01:55.6331874Z   clean: true
+2025-10-08T17:01:55.6332440Z   sparse-checkout-cone-mode: true
+2025-10-08T17:01:55.6333095Z   fetch-depth: 1
+2025-10-08T17:01:55.6333658Z   fetch-tags: false
+2025-10-08T17:01:55.6334231Z   show-progress: true
+2025-10-08T17:01:55.6334816Z   lfs: false
+2025-10-08T17:01:55.6335345Z   submodules: false
+2025-10-08T17:01:55.6335913Z   set-safe-directory: true
+2025-10-08T17:01:55.6336769Z ##[endgroup]
+2025-10-08T17:01:55.7391777Z Syncing repository: camerensmith/LookBook
+2025-10-08T17:01:55.7393817Z ##[group]Getting Git version info
+2025-10-08T17:01:55.7394756Z Working directory is '/home/runner/work/LookBook/LookBook'
+2025-10-08T17:01:55.7396003Z [command]/usr/bin/git version
+2025-10-08T17:01:55.7468945Z git version 2.51.0
+2025-10-08T17:01:55.7495499Z ##[endgroup]
+2025-10-08T17:01:55.7511928Z Temporarily overriding HOME='/home/runner/work/_temp/13e27ea6-a9ac-42cb-894d-88d9c3a0f128' before making global git config changes
+2025-10-08T17:01:55.7515124Z Adding repository directory to the temporary git global config as a safe directory
+2025-10-08T17:01:55.7525620Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/LookBook/LookBook
+2025-10-08T17:01:55.7561040Z Deleting the contents of '/home/runner/work/LookBook/LookBook'
+2025-10-08T17:01:55.7564848Z ##[group]Initializing the repository
+2025-10-08T17:01:55.7570112Z [command]/usr/bin/git init /home/runner/work/LookBook/LookBook
+2025-10-08T17:01:55.7672104Z hint: Using 'master' as the name for the initial branch. This default branch name
+2025-10-08T17:01:55.7674378Z hint: is subject to change. To configure the initial branch name to use in all
+2025-10-08T17:01:55.7676741Z hint: of your new repositories, which will suppress this warning, call:
+2025-10-08T17:01:55.7678615Z hint:
+2025-10-08T17:01:55.7679485Z hint: 	git config --global init.defaultBranch <name>
+2025-10-08T17:01:55.7680638Z hint:
+2025-10-08T17:01:55.7681578Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2025-10-08T17:01:55.7683285Z hint: 'development'. The just-created branch can be renamed via this command:
+2025-10-08T17:01:55.7684343Z hint:
+2025-10-08T17:01:55.7684966Z hint: 	git branch -m <name>
+2025-10-08T17:01:55.7685647Z hint:
+2025-10-08T17:01:55.7686436Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2025-10-08T17:01:55.7688650Z Initialized empty Git repository in /home/runner/work/LookBook/LookBook/.git/
+2025-10-08T17:01:55.7691259Z [command]/usr/bin/git remote add origin https://github.com/camerensmith/LookBook
+2025-10-08T17:01:55.7723459Z ##[endgroup]
+2025-10-08T17:01:55.7724470Z ##[group]Disabling automatic garbage collection
+2025-10-08T17:01:55.7726991Z [command]/usr/bin/git config --local gc.auto 0
+2025-10-08T17:01:55.7755500Z ##[endgroup]
+2025-10-08T17:01:55.7756980Z ##[group]Setting up auth
+2025-10-08T17:01:55.7761430Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-10-08T17:01:55.7790424Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-10-08T17:01:55.8092830Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-10-08T17:01:55.8123851Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-10-08T17:01:55.8339975Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2025-10-08T17:01:55.8373789Z ##[endgroup]
+2025-10-08T17:01:55.8376135Z ##[group]Fetching the repository
+2025-10-08T17:01:55.8392382Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +86194b9d5ca14ddba32a1accd9596bc45bed4182:refs/remotes/origin/main
+2025-10-08T17:01:56.8749135Z From https://github.com/camerensmith/LookBook
+2025-10-08T17:01:56.8751195Z  * [new ref]         86194b9d5ca14ddba32a1accd9596bc45bed4182 -> origin/main
+2025-10-08T17:01:56.8784919Z ##[endgroup]
+2025-10-08T17:01:56.8787617Z ##[group]Determining the checkout info
+2025-10-08T17:01:56.8791127Z ##[endgroup]
+2025-10-08T17:01:56.8793056Z [command]/usr/bin/git sparse-checkout disable
+2025-10-08T17:01:56.8834832Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2025-10-08T17:01:56.8866832Z ##[group]Checking out the ref
+2025-10-08T17:01:56.8871032Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2025-10-08T17:01:57.5831627Z Switched to a new branch 'main'
+2025-10-08T17:01:57.5832963Z branch 'main' set up to track 'origin/main'.
+2025-10-08T17:01:57.5864186Z ##[endgroup]
+2025-10-08T17:01:57.5904513Z [command]/usr/bin/git log -1 --format=%H
+2025-10-08T17:01:57.5927826Z 86194b9d5ca14ddba32a1accd9596bc45bed4182

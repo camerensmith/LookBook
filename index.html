@@ -58,10 +58,14 @@
                 <span class="material-icons">add_a_photo</span>
                 <span>Add Article</span>
             </button>
-            <button class="nav-btn mui-btn" data-action="view-articles">
-                <span class="material-icons">inventory</span>
-                <span>Add/View Articles</span>
-            </button>
+                <button class="nav-btn mui-btn" data-action="view-articles">
+                    <span class="material-icons">inventory</span>
+                    <span>Add/View Articles</span>
+                </button>
+                <button class="nav-btn mui-btn" data-action="collections">
+                    <span class="material-icons">collections</span>
+                    <span>Collections</span>
+                </button>
         </nav>
 
         <!-- Main Content Area -->
@@ -141,13 +145,19 @@
             <!-- Add Outfit View -->
             <div id="addOutfitView" class="view">
                 <h2>Create New Outfit</h2>
-                <div class="outfit-builder">
-                    <div class="article-selector">
-                        <input type="text" id="searchArticles" placeholder="Search articles by name or tags...">
-                        <div id="articlesList" class="articles-list">
-                            <!-- Articles will be populated here -->
-                        </div>
-                    </div>
+                        <div class="outfit-builder">
+                            <div class="article-selector">
+                                <div class="search-section">
+                                    <input type="text" id="searchArticles" placeholder="Search articles by name or tags...">
+                                    <div class="tag-filters">
+                                        <button class="tag-filter-btn active" data-tag="all">All</button>
+                                        <!-- Tag filter buttons will be populated here -->
+                                    </div>
+                                </div>
+                                <div id="articlesList" class="articles-list">
+                                    <!-- Articles will be populated here -->
+                                </div>
+                            </div>
                     <div class="outfit-canvas">
                         <h3>Your Outfit</h3>
                         <div id="outfitCanvas" class="outfit-canvas-area">
@@ -159,6 +169,15 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Created Outfits Section -->
+                <div class="created-outfits-section">
+                    <h3>Your Saved Outfits</h3>
+                    <div id="createdOutfitsList" class="created-outfits-list">
+                        <!-- Created outfits will be populated here -->
+                    </div>
+                </div>
+                
                         <form id="outfitForm" class="form hidden">
                             <input type="text" id="outfitName" placeholder="Outfit Name" required>
                             <select id="outfitCategory">
@@ -172,6 +191,12 @@
             <!-- Category Detail View -->
             <div id="categoryDetailView" class="view">
                 <h2 id="categoryDetailTitle">Category</h2>
+                <div class="category-actions">
+                    <button class="btn-primary" onclick="window.app.navigateTo('add-article')">
+                        <span class="material-icons">add</span>
+                        <span>Add Article</span>
+                    </button>
+                </div>
                 <div id="categoryOutfits" class="category-outfits">
                     <!-- Outfits in this category will be populated here -->
                 </div>
@@ -192,19 +217,51 @@
                     </div>
 
                     <!-- View Articles View -->
-                    <div id="viewArticlesView" class="view">
-                        <h2>Your Articles</h2>
-                        <div class="articles-header">
-                            <button class="btn-primary" onclick="window.app.navigateTo('add-article')">
-                                <span class="material-icons">add</span>
-                                <span>Add New Article</span>
-                            </button>
+            <div id="viewArticlesView" class="view">
+                <h2>Your Articles</h2>
+                <div class="articles-header">
+                    <button class="btn-primary" onclick="window.app.navigateTo('add-article')">
+                        <span class="material-icons">add</span>
+                        <span>Add New Article</span>
+                    </button>
+                </div>
+                <div id="articlesGrid" class="articles-grid">
+                    <!-- Articles will be populated here -->
+                </div>
+                <button class="btn-secondary back-btn" data-back="categories">Back</button>
+            </div>
+
+            <!-- Collections View -->
+            <div id="collectionsView" class="view">
+                <h2>Collections</h2>
+                <div class="collections-header">
+                    <button class="btn-primary" onclick="window.app.showCreateCollectionForm()">
+                        <span class="material-icons">add</span>
+                        <span>Create Collection</span>
+                    </button>
+                </div>
+                <div id="collectionsList" class="collections-list">
+                    <!-- Collections will be populated here -->
+                </div>
+                <button class="btn-secondary back-btn" data-back="categories">Back</button>
+            </div>
+
+            <!-- Create Collection View -->
+            <div id="createCollectionView" class="view">
+                <h2>Create New Collection</h2>
+                <form id="collectionForm" class="form">
+                    <input type="text" id="collectionName" placeholder="Collection Name" required>
+                    <textarea id="collectionDescription" placeholder="Description (Optional)" rows="3"></textarea>
+                    <div class="category-selection">
+                        <h3>Select Categories</h3>
+                        <div id="categoryCheckboxes" class="category-checkboxes">
+                            <!-- Category checkboxes will be populated here -->
                         </div>
-                        <div id="articlesGrid" class="articles-grid">
-                            <!-- Articles will be populated here -->
-                        </div>
-                        <button class="btn-secondary back-btn" data-back="categories">Back</button>
                     </div>
+                    <button type="submit" class="btn-primary">Create Collection</button>
+                </form>
+                <button class="btn-secondary back-btn" data-back="collections">Back</button>
+            </div>
         </main>
     </div>
 

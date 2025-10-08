@@ -1,0 +1,5 @@
+2025-10-08T17:01:51.6700000Z Requested labels: ubuntu-latest
+2025-10-08T17:01:51.6700000Z Job defined at: camerensmith/LookBook/.github/workflows/firebase-hosting-merge.yml@refs/heads/main
+2025-10-08T17:01:51.6700000Z Waiting for a runner to pick up this job...
+2025-10-08T17:01:52.0460000Z Job is about to start running on the hosted runner: GitHub Actions 1000000035
+2025-10-08T17:01:52.0450000Z Job is waiting for a hosted runner to come online.

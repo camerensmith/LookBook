@@ -1,0 +1,149 @@
+﻿2025-10-08T17:01:54.4728523Z Current runner version: '2.328.0'
+2025-10-08T17:01:54.4754338Z ##[group]Runner Image Provisioner
+2025-10-08T17:01:54.4755468Z Hosted Compute Agent
+2025-10-08T17:01:54.4756220Z Version: 20250912.392
+2025-10-08T17:01:54.4757098Z Commit: d921fda672a98b64f4f82364647e2f10b2267d0b
+2025-10-08T17:01:54.4758348Z Build Date: 2025-09-12T15:23:14Z
+2025-10-08T17:01:54.4759253Z ##[endgroup]
+2025-10-08T17:01:54.4759969Z ##[group]Operating System
+2025-10-08T17:01:54.4760774Z Ubuntu
+2025-10-08T17:01:54.4761448Z 24.04.3
+2025-10-08T17:01:54.4762119Z LTS
+2025-10-08T17:01:54.4762793Z ##[endgroup]
+2025-10-08T17:01:54.4763523Z ##[group]Runner Image
+2025-10-08T17:01:54.4764290Z Image: ubuntu-24.04
+2025-10-08T17:01:54.4765024Z Version: 20250929.60.1
+2025-10-08T17:01:54.4766434Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20250929.60/images/ubuntu/Ubuntu2404-Readme.md
+2025-10-08T17:01:54.4768709Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20250929.60
+2025-10-08T17:01:54.4770062Z ##[endgroup]
+2025-10-08T17:01:54.4771522Z ##[group]GITHUB_TOKEN Permissions
+2025-10-08T17:01:54.4773943Z Contents: read
+2025-10-08T17:01:54.4774665Z Metadata: read
+2025-10-08T17:01:54.4775454Z Packages: read
+2025-10-08T17:01:54.4776105Z ##[endgroup]
+2025-10-08T17:01:54.4779209Z Secret source: Actions
+2025-10-08T17:01:54.4780366Z Prepare workflow directory
+2025-10-08T17:01:54.5109477Z Prepare all required actions
+2025-10-08T17:01:54.5147279Z Getting action download info
+2025-10-08T17:01:54.9153744Z Download action repository 'actions/checkout@v4' (SHA:08eba0b27e820071cde6df949e0beb9ba4906955)
+2025-10-08T17:01:55.0875026Z Download action repository 'FirebaseExtended/action-hosting-deploy@v0' (SHA:e2eda2e106cfa35cdbcf4ac9ddaf6c4756df2c8c)
+2025-10-08T17:01:55.5636066Z Complete job name: build_and_deploy
+2025-10-08T17:01:55.6326902Z ##[group]Run actions/checkout@v4
+2025-10-08T17:01:55.6327923Z with:
+2025-10-08T17:01:55.6328682Z   repository: camerensmith/LookBook
+2025-10-08T17:01:55.6329557Z   token: ***
+2025-10-08T17:01:55.6330124Z   ssh-strict: true
+2025-10-08T17:01:55.6330682Z   ssh-user: git
+2025-10-08T17:01:55.6331251Z   persist-credentials: true
+2025-10-08T17:01:55.6331879Z   clean: true
+2025-10-08T17:01:55.6332443Z   sparse-checkout-cone-mode: true
+2025-10-08T17:01:55.6333099Z   fetch-depth: 1
+2025-10-08T17:01:55.6333661Z   fetch-tags: false
+2025-10-08T17:01:55.6334239Z   show-progress: true
+2025-10-08T17:01:55.6334819Z   lfs: false
+2025-10-08T17:01:55.6335348Z   submodules: false
+2025-10-08T17:01:55.6335916Z   set-safe-directory: true
+2025-10-08T17:01:55.6336778Z ##[endgroup]
+2025-10-08T17:01:55.7391829Z Syncing repository: camerensmith/LookBook
+2025-10-08T17:01:55.7393840Z ##[group]Getting Git version info
+2025-10-08T17:01:55.7394767Z Working directory is '/home/runner/work/LookBook/LookBook'
+2025-10-08T17:01:55.7396075Z [command]/usr/bin/git version
+2025-10-08T17:01:55.7468972Z git version 2.51.0
+2025-10-08T17:01:55.7495541Z ##[endgroup]
+2025-10-08T17:01:55.7511962Z Temporarily overriding HOME='/home/runner/work/_temp/13e27ea6-a9ac-42cb-894d-88d9c3a0f128' before making global git config changes
+2025-10-08T17:01:55.7515143Z Adding repository directory to the temporary git global config as a safe directory
+2025-10-08T17:01:55.7525655Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/LookBook/LookBook
+2025-10-08T17:01:55.7561076Z Deleting the contents of '/home/runner/work/LookBook/LookBook'
+2025-10-08T17:01:55.7564877Z ##[group]Initializing the repository
+2025-10-08T17:01:55.7570145Z [command]/usr/bin/git init /home/runner/work/LookBook/LookBook
+2025-10-08T17:01:55.7672134Z hint: Using 'master' as the name for the initial branch. This default branch name
+2025-10-08T17:01:55.7674400Z hint: is subject to change. To configure the initial branch name to use in all
+2025-10-08T17:01:55.7676786Z hint: of your new repositories, which will suppress this warning, call:
+2025-10-08T17:01:55.7678634Z hint:
+2025-10-08T17:01:55.7679492Z hint: 	git config --global init.defaultBranch <name>
+2025-10-08T17:01:55.7680644Z hint:
+2025-10-08T17:01:55.7681591Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2025-10-08T17:01:55.7683291Z hint: 'development'. The just-created branch can be renamed via this command:
+2025-10-08T17:01:55.7684347Z hint:
+2025-10-08T17:01:55.7684971Z hint: 	git branch -m <name>
+2025-10-08T17:01:55.7685650Z hint:
+2025-10-08T17:01:55.7686440Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2025-10-08T17:01:55.7688666Z Initialized empty Git repository in /home/runner/work/LookBook/LookBook/.git/
+2025-10-08T17:01:55.7691267Z [command]/usr/bin/git remote add origin https://github.com/camerensmith/LookBook
+2025-10-08T17:01:55.7723480Z ##[endgroup]
+2025-10-08T17:01:55.7724475Z ##[group]Disabling automatic garbage collection
+2025-10-08T17:01:55.7727029Z [command]/usr/bin/git config --local gc.auto 0
+2025-10-08T17:01:55.7755526Z ##[endgroup]
+2025-10-08T17:01:55.7756988Z ##[group]Setting up auth
+2025-10-08T17:01:55.7761452Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-10-08T17:01:55.7790450Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-10-08T17:01:55.8092867Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-10-08T17:01:55.8123888Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-10-08T17:01:55.8340022Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2025-10-08T17:01:55.8374141Z ##[endgroup]
+2025-10-08T17:01:55.8376162Z ##[group]Fetching the repository
+2025-10-08T17:01:55.8392415Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +86194b9d5ca14ddba32a1accd9596bc45bed4182:refs/remotes/origin/main
+2025-10-08T17:01:56.8749241Z From https://github.com/camerensmith/LookBook
+2025-10-08T17:01:56.8751202Z  * [new ref]         86194b9d5ca14ddba32a1accd9596bc45bed4182 -> origin/main
+2025-10-08T17:01:56.8784949Z ##[endgroup]
+2025-10-08T17:01:56.8787640Z ##[group]Determining the checkout info
+2025-10-08T17:01:56.8791149Z ##[endgroup]
+2025-10-08T17:01:56.8793075Z [command]/usr/bin/git sparse-checkout disable
+2025-10-08T17:01:56.8834868Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2025-10-08T17:01:56.8866852Z ##[group]Checking out the ref
+2025-10-08T17:01:56.8871053Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2025-10-08T17:01:57.5831789Z Switched to a new branch 'main'
+2025-10-08T17:01:57.5832979Z branch 'main' set up to track 'origin/main'.
+2025-10-08T17:01:57.5864204Z ##[endgroup]
+2025-10-08T17:01:57.5904536Z [command]/usr/bin/git log -1 --format=%H
+2025-10-08T17:01:57.5927860Z 86194b9d5ca14ddba32a1accd9596bc45bed4182
+2025-10-08T17:01:57.6143618Z ##[group]Run FirebaseExtended/action-hosting-deploy@v0
+2025-10-08T17:01:57.6144032Z with:
+2025-10-08T17:01:57.6144529Z   repoToken: ***
+2025-10-08T17:01:57.6154144Z   firebaseServiceAccount: ***
+
+2025-10-08T17:01:57.6154476Z   channelId: live
+2025-10-08T17:01:57.6154751Z   projectId: project-lookbook
+2025-10-08T17:01:57.6155054Z   expires: 7d
+2025-10-08T17:01:57.6155306Z   entryPoint: .
+2025-10-08T17:01:57.6155580Z   firebaseToolsVersion: latest
+2025-10-08T17:01:57.6155891Z   disableComment: false
+2025-10-08T17:01:57.6156175Z   force: false
+2025-10-08T17:01:57.6156420Z ##[endgroup]
+2025-10-08T17:01:57.6797391Z ##[group]Verifying firebase.json exists
+2025-10-08T17:01:57.6803603Z firebase.json file found. Continuing deploy.
+2025-10-08T17:01:57.6807599Z ##[endgroup]
+2025-10-08T17:01:57.6808526Z ##[group]Setting up CLI credentials
+2025-10-08T17:01:57.6825193Z Created a temporary file with Application Default Credentials.
+2025-10-08T17:01:57.6826734Z ##[endgroup]
+2025-10-08T17:01:57.6827558Z ##[group]Deploying to production site
+2025-10-08T17:01:57.6867828Z [command]/usr/local/bin/npx firebase-tools@latest deploy --only hosting --project project-lookbook --json
+2025-10-08T17:02:10.2687318Z npm warn exec The following package was not found and will be installed: firebase-tools@14.19.1
+2025-10-08T17:02:27.0440141Z npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+2025-10-08T17:02:37.4463958Z ***
+2025-10-08T17:02:37.4464466Z   "status": "success",
+2025-10-08T17:02:37.4464972Z   "result": ***
+2025-10-08T17:02:37.4465735Z     "hosting": "projects/420746963131/sites/project-lookbook/versions/aa208f0b5ba929b5"
+2025-10-08T17:02:37.4466619Z   ***
+2025-10-08T17:02:37.5053936Z ***::endgroup::
+2025-10-08T17:02:37.5064259Z ***
+2025-10-08T17:02:37.5064745Z   details_url: 'https://project-lookbook.web.app/',
+2025-10-08T17:02:37.5065157Z   conclusion: 'success',
+2025-10-08T17:02:37.5065465Z   output: ***
+2025-10-08T17:02:37.5065796Z     title: 'Production deploy succeeded',
+2025-10-08T17:02:37.5066275Z     summary: '[project-lookbook.web.app](https://project-lookbook.web.app/)'
+2025-10-08T17:02:37.5066747Z   ***
+2025-10-08T17:02:37.5067220Z ***
+2025-10-08T17:02:37.5189296Z Post job cleanup.
+2025-10-08T17:02:37.6114927Z [command]/usr/bin/git version
+2025-10-08T17:02:37.6150336Z git version 2.51.0
+2025-10-08T17:02:37.6195502Z Temporarily overriding HOME='/home/runner/work/_temp/96b27bab-e45c-45dc-9cb2-9d256a3cfa45' before making global git config changes
+2025-10-08T17:02:37.6196972Z Adding repository directory to the temporary git global config as a safe directory
+2025-10-08T17:02:37.6202297Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/LookBook/LookBook
+2025-10-08T17:02:37.6238219Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2025-10-08T17:02:37.6271053Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2025-10-08T17:02:37.6513296Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2025-10-08T17:02:37.6534323Z http.https://github.com/.extraheader
+2025-10-08T17:02:37.6546427Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2025-10-08T17:02:37.6576162Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2025-10-08T17:02:37.6917961Z Cleaning up orphan processes

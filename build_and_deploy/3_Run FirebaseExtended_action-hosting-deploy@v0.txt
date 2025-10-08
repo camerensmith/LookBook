@@ -1,0 +1,37 @@
+﻿2025-10-08T17:01:57.6143601Z ##[group]Run FirebaseExtended/action-hosting-deploy@v0
+2025-10-08T17:01:57.6144027Z with:
+2025-10-08T17:01:57.6144524Z   repoToken: ***
+2025-10-08T17:01:57.6154131Z   firebaseServiceAccount: ***
+
+2025-10-08T17:01:57.6154472Z   channelId: live
+2025-10-08T17:01:57.6154747Z   projectId: project-lookbook
+2025-10-08T17:01:57.6155050Z   expires: 7d
+2025-10-08T17:01:57.6155302Z   entryPoint: .
+2025-10-08T17:01:57.6155577Z   firebaseToolsVersion: latest
+2025-10-08T17:01:57.6155880Z   disableComment: false
+2025-10-08T17:01:57.6156171Z   force: false
+2025-10-08T17:01:57.6156417Z ##[endgroup]
+2025-10-08T17:01:57.6797347Z ##[group]Verifying firebase.json exists
+2025-10-08T17:01:57.6803587Z firebase.json file found. Continuing deploy.
+2025-10-08T17:01:57.6807586Z ##[endgroup]
+2025-10-08T17:01:57.6808518Z ##[group]Setting up CLI credentials
+2025-10-08T17:01:57.6825178Z Created a temporary file with Application Default Credentials.
+2025-10-08T17:01:57.6826724Z ##[endgroup]
+2025-10-08T17:01:57.6827493Z ##[group]Deploying to production site
+2025-10-08T17:01:57.6867812Z [command]/usr/local/bin/npx firebase-tools@latest deploy --only hosting --project project-lookbook --json
+2025-10-08T17:02:10.2687273Z npm warn exec The following package was not found and will be installed: firebase-tools@14.19.1
+2025-10-08T17:02:27.0440103Z npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+2025-10-08T17:02:37.4463916Z ***
+2025-10-08T17:02:37.4464461Z   "status": "success",
+2025-10-08T17:02:37.4464968Z   "result": ***
+2025-10-08T17:02:37.4465729Z     "hosting": "projects/420746963131/sites/project-lookbook/versions/aa208f0b5ba929b5"
+2025-10-08T17:02:37.4466614Z   ***
+2025-10-08T17:02:37.5053898Z ***::endgroup::
+2025-10-08T17:02:37.5064248Z ***
+2025-10-08T17:02:37.5064740Z   details_url: 'https://project-lookbook.web.app/',
+2025-10-08T17:02:37.5065153Z   conclusion: 'success',
+2025-10-08T17:02:37.5065462Z   output: ***
+2025-10-08T17:02:37.5065777Z     title: 'Production deploy succeeded',
+2025-10-08T17:02:37.5066272Z     summary: '[project-lookbook.web.app](https://project-lookbook.web.app/)'
+2025-10-08T17:02:37.5066744Z   ***
+2025-10-08T17:02:37.5067217Z ***

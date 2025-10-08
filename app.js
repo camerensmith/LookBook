@@ -6,6 +6,7 @@ class LookbookApp {
         this.categories = [];
         this.articles = [];
         this.outfits = [];
+        this.collections = [];
         this.currentView = 'categories';
         this.currentCategory = null;
         this.currentOutfit = null;
@@ -216,16 +217,18 @@ class LookbookApp {
             if (this.user && this.db) {
                 console.log('Loading data from Firestore...');
                 
-                const [firestoreCategories, firestoreArticles, firestoreOutfits] = await Promise.all([
+                const [firestoreCategories, firestoreArticles, firestoreOutfits, firestoreCollections] = await Promise.all([
                     this.loadFromFirestore('categories'),
                     this.loadFromFirestore('articles'),
-                    this.loadFromFirestore('outfits')
+                    this.loadFromFirestore('outfits'),
+                    this.loadFromFirestore('collections')
                 ]);
                 
                 // Use Firestore data if available, otherwise fall back to localStorage
                 this.categories = firestoreCategories !== null ? firestoreCategories : this.loadFromLocalStorage('categories');
                 this.articles = firestoreArticles !== null ? firestoreArticles : this.loadFromLocalStorage('articles');
                 this.outfits = firestoreOutfits !== null ? firestoreOutfits : this.loadFromLocalStorage('outfits');
+                this.collections = firestoreCollections !== null ? firestoreCollections : this.loadFromLocalStorage('collections');
                 
                 // If we got data from Firestore, also save it to localStorage as backup
                 if (firestoreCategories !== null || firestoreArticles !== null || firestoreOutfits !== null) {
@@ -237,6 +240,7 @@ class LookbookApp {
                 this.categories = this.loadFromLocalStorage('categories');
                 this.articles = this.loadFromLocalStorage('articles');
                 this.outfits = this.loadFromLocalStorage('outfits');
+                this.collections = this.loadFromLocalStorage('collections');
             }
 
             console.log('Data loaded', {
@@ -244,6 +248,7 @@ class LookbookApp {
                 categories: this.categories.length,
                 articles: this.articles.length,
                 outfits: this.outfits.length,
+                collections: this.collections.length,
                 source: this.user && this.db ? 'Firestore' : 'localStorage',
                 categoriesData: this.categories
             });
@@ -271,6 +276,7 @@ class LookbookApp {
             localStorage.setItem(this.getStorageKey('categories'), JSON.stringify(this.categories));
             localStorage.setItem(this.getStorageKey('articles'), JSON.stringify(this.articles));
             localStorage.setItem(this.getStorageKey('outfits'), JSON.stringify(this.outfits));
+            localStorage.setItem(this.getStorageKey('collections'), JSON.stringify(this.collections));
             console.log('Data saved to localStorage as backup');
         } catch (error) {
             console.error('Error saving to localStorage:', error);
@@ -506,6 +512,15 @@ class LookbookApp {
                     this.filterArticles(e.target.value);
                 });
             }
+            
+            // Add event listener for "All" tag filter
+            const allTagFilter = document.querySelector('.tag-filter-btn[data-tag="all"]');
+            if (allTagFilter) {
+                allTagFilter.addEventListener('click', () => this.selectTagFilter('all'));
+            }
+            
+            // Initialize long press functionality
+            this.initLongPress();
 
             const clearOutfitBtn = document.getElementById('clearOutfitBtn');
             if (clearOutfitBtn) {
@@ -718,12 +733,20 @@ class LookbookApp {
                     break;
                 case 'addOutfit':
                     this.renderArticles();
+                    this.populateTagFilters();
+                    this.renderCreatedOutfits();
                     break;
                 case 'addArticle':
                     this.resetArticleForm();
                     break;
                 case 'viewArticles':
                     this.renderArticlesGrid();
+                    break;
+                case 'collections':
+                    this.renderCollections();
+                    break;
+                case 'createCollection':
+                    this.showCreateCollectionForm();
                     break;
             }
         } catch (error) {
@@ -1257,44 +1280,572 @@ class LookbookApp {
                 return;
             }
             
+            // Get search and filter values
+            const searchInput = document.getElementById('searchArticles');
+            const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+            const activeTagFilter = document.querySelector('.tag-filter-btn.active');
+            const selectedTag = activeTagFilter ? activeTagFilter.dataset.tag : 'all';
+            
+            // Filter articles
+            const filteredArticles = this.articles.filter(article => {
+                const matchesSearch = !searchTerm || 
+                    article.name.toLowerCase().includes(searchTerm) ||
+                    (article.tags && article.tags.toLowerCase().includes(searchTerm));
+                
+                const matchesTag = selectedTag === 'all' || 
+                    (article.tags && article.tags.toLowerCase().includes(selectedTag));
+                
+                return matchesSearch && matchesTag;
+            });
+            
             articlesList.innerHTML = '';
 
-            this.articles.forEach(article => {
+            if (filteredArticles.length === 0) {
+                articlesList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <span class="material-icons">search_off</span>
+                        </div>
+                        <h3>No Articles Found</h3>
+                        <p>Try adjusting your search or filter criteria</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filteredArticles.forEach(article => {
                 const articleElement = document.createElement('div');
                 articleElement.className = 'article-item';
                 articleElement.draggable = true;
                 articleElement.dataset.articleId = article.id;
                 
+                // Use processed image if available, otherwise fallback to original or placeholder
+                const imageSrc = article.processedImage || article.image || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yMCAyMEg0MFY0MEgyMFYyMFoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+';
+                
                 articleElement.innerHTML = `
-                    <img src="${article.image}" alt="${article.name}">
+                    <img src="${imageSrc}" alt="${this.escapeHtml(article.name)}" class="article-thumbnail">
                     <div class="article-info">
-                        <h4>${article.name}</h4>
-                        <div class="tags">${article.tags.join(', ')}</div>
+                        <h4>${this.escapeHtml(article.name)}</h4>
+                        <div class="tags">${this.escapeHtml(article.tags || '')}</div>
                     </div>
                 `;
                 
                 articlesList.appendChild(articleElement);
             });
             
-            console.log('Articles rendered:', this.articles.length);
+            console.log('Articles rendered:', filteredArticles.length, 'of', this.articles.length);
         } catch (error) {
             console.error('Error rendering articles:', error);
         }
     }
 
-    filterArticles(searchTerm) {
+    // Populate tag filters from all articles
+    populateTagFilters() {
         try {
-            const articles = document.querySelectorAll('.article-item');
-            const term = searchTerm.toLowerCase();
+            const tagFiltersContainer = document.querySelector('.tag-filters');
+            if (!tagFiltersContainer) return;
             
-            articles.forEach(article => {
-                const name = article.querySelector('h4').textContent.toLowerCase();
-                const tags = article.querySelector('.tags').textContent.toLowerCase();
-                const isVisible = name.includes(term) || tags.includes(term);
-                article.style.display = isVisible ? 'block' : 'none';
+            // Get all unique tags from articles
+            const allTags = new Set();
+            this.articles.forEach(article => {
+                if (article.tags) {
+                    const tags = article.tags.split(',').map(tag => tag.trim().toLowerCase());
+                    tags.forEach(tag => {
+                        if (tag) allTags.add(tag);
+                    });
+                }
+            });
+            
+            // Clear existing filter buttons (except "All")
+            const existingButtons = tagFiltersContainer.querySelectorAll('.tag-filter-btn:not([data-tag="all"])');
+            existingButtons.forEach(btn => btn.remove());
+            
+            // Add tag filter buttons
+            Array.from(allTags).sort().forEach(tag => {
+                const button = document.createElement('button');
+                button.className = 'tag-filter-btn';
+                button.dataset.tag = tag;
+                button.textContent = tag;
+                button.addEventListener('click', () => this.selectTagFilter(tag));
+                tagFiltersContainer.appendChild(button);
             });
         } catch (error) {
-            console.error('Error filtering articles:', error);
+            console.error('Error populating tag filters:', error);
+        }
+    }
+    
+    // Handle tag filter selection
+    selectTagFilter(tag) {
+        try {
+            // Update active state
+            document.querySelectorAll('.tag-filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-tag="${tag}"]`).classList.add('active');
+            
+            // Re-render articles with new filter
+            this.renderArticles();
+        } catch (error) {
+            console.error('Error selecting tag filter:', error);
+        }
+    }
+    
+    filterArticles(searchTerm) {
+        // This method is now handled by renderArticles() with filtering
+        this.renderArticles();
+    }
+    
+    // Initialize long press functionality for delete actions
+    initLongPress() {
+        try {
+            this.longPressTimer = null;
+            this.longPressDelay = 800; // 800ms for long press
+            this.longPressTarget = null;
+            
+            // Add long press event listeners to document
+            document.addEventListener('touchstart', (e) => {
+                this.handleLongPressStart(e);
+            }, { passive: true });
+            
+            document.addEventListener('touchend', (e) => {
+                this.handleLongPressEnd(e);
+            }, { passive: true });
+            
+            document.addEventListener('touchmove', (e) => {
+                this.handleLongPressCancel(e);
+            }, { passive: true });
+            
+            console.log('Long press functionality initialized');
+        } catch (error) {
+            console.error('Error initializing long press:', error);
+        }
+    }
+    
+    handleLongPressStart(e) {
+        try {
+            const target = e.target.closest('.article-item, .outfit-item, .category-card, .created-outfit-card');
+            if (!target) return;
+            
+            this.longPressTarget = target;
+            this.longPressTimer = setTimeout(() => {
+                this.triggerLongPress(target);
+            }, this.longPressDelay);
+            
+            // Add visual feedback
+            target.style.transform = 'scale(0.95)';
+            target.style.opacity = '0.8';
+        } catch (error) {
+            console.error('Error handling long press start:', error);
+        }
+    }
+    
+    handleLongPressEnd(e) {
+        try {
+            if (this.longPressTimer) {
+                clearTimeout(this.longPressTimer);
+                this.longPressTimer = null;
+            }
+            
+            if (this.longPressTarget) {
+                // Reset visual feedback
+                this.longPressTarget.style.transform = '';
+                this.longPressTarget.style.opacity = '';
+                this.longPressTarget = null;
+            }
+        } catch (error) {
+            console.error('Error handling long press end:', error);
+        }
+    }
+    
+    handleLongPressCancel(e) {
+        try {
+            if (this.longPressTimer) {
+                clearTimeout(this.longPressTimer);
+                this.longPressTimer = null;
+            }
+            
+            if (this.longPressTarget) {
+                // Reset visual feedback
+                this.longPressTarget.style.transform = '';
+                this.longPressTarget.style.opacity = '';
+                this.longPressTarget = null;
+            }
+        } catch (error) {
+            console.error('Error handling long press cancel:', error);
+        }
+    }
+    
+    triggerLongPress(target) {
+        try {
+            if (!target) return;
+            
+            // Determine what type of item this is and show appropriate delete confirmation
+            if (target.classList.contains('article-item')) {
+                const articleId = target.dataset.articleId;
+                const article = this.articles.find(a => a.id === articleId);
+                if (article) {
+                    this.showDeleteConfirmation('article', article.name, () => {
+                        this.deleteArticle(articleId);
+                    });
+                }
+            } else if (target.classList.contains('outfit-item')) {
+                const itemId = target.id.replace('outfit-item-', '');
+                const outfitItem = this.currentOutfitItems.find(item => item.id === itemId);
+                if (outfitItem) {
+                    this.showDeleteConfirmation('outfit item', outfitItem.article.name, () => {
+                        this.removeOutfitItem(itemId);
+                    });
+                }
+            } else if (target.classList.contains('category-card')) {
+                const categoryId = target.dataset.categoryId;
+                const category = this.categories.find(c => c.id === categoryId);
+                if (category) {
+                    this.showDeleteConfirmation('category', category.name, () => {
+                        this.deleteCategory(categoryId);
+                    });
+                }
+            } else if (target.classList.contains('created-outfit-card')) {
+                const outfitId = target.dataset.outfitId;
+                const outfit = this.findOutfitById(outfitId);
+                if (outfit) {
+                    this.showDeleteConfirmation('outfit', outfit.name, () => {
+                        this.deleteOutfit(outfitId);
+                    });
+                }
+            }
+            
+            // Reset visual feedback
+            target.style.transform = '';
+            target.style.opacity = '';
+            this.longPressTarget = null;
+        } catch (error) {
+            console.error('Error triggering long press:', error);
+        }
+    }
+    
+    showDeleteConfirmation(itemType, itemName, onConfirm) {
+        try {
+            const confirmed = confirm(`Are you sure you want to delete ${itemType} "${itemName}"?`);
+            if (confirmed) {
+                onConfirm();
+            }
+        } catch (error) {
+            console.error('Error showing delete confirmation:', error);
+        }
+    }
+    
+    findOutfitById(outfitId) {
+        try {
+            for (const category of this.categories) {
+                if (category.outfits) {
+                    const outfit = category.outfits.find(o => o.id === outfitId);
+                    if (outfit) return outfit;
+                }
+            }
+            return null;
+        } catch (error) {
+            console.error('Error finding outfit by ID:', error);
+            return null;
+        }
+    }
+    
+    deleteOutfit(outfitId) {
+        try {
+            // Find and remove outfit from category
+            for (const category of this.categories) {
+                if (category.outfits) {
+                    const outfitIndex = category.outfits.findIndex(o => o.id === outfitId);
+                    if (outfitIndex !== -1) {
+                        category.outfits.splice(outfitIndex, 1);
+                        break;
+                    }
+                }
+            }
+            
+            // Save data and refresh views
+            this.saveData();
+            this.renderCreatedOutfits();
+            
+            console.log('Outfit deleted:', outfitId);
+        } catch (error) {
+            console.error('Error deleting outfit:', error);
+        }
+    }
+    
+    deleteArticle(articleId) {
+        try {
+            this.articles = this.articles.filter(a => a.id !== articleId);
+            this.saveData();
+            this.renderArticles();
+            this.renderArticlesGrid();
+            this.populateTagFilters();
+            
+            console.log('Article deleted:', articleId);
+        } catch (error) {
+            console.error('Error deleting article:', error);
+        }
+    }
+    
+    deleteCategory(categoryId) {
+        try {
+            this.categories = this.categories.filter(c => c.id !== categoryId);
+            this.saveData();
+            this.renderCategories();
+            this.updateCategorySelect();
+            
+            console.log('Category deleted:', categoryId);
+        } catch (error) {
+            console.error('Error deleting category:', error);
+        }
+    }
+    
+    // Collections Management
+    renderCollections() {
+        try {
+            const collectionsList = document.getElementById('collectionsList');
+            if (!collectionsList) {
+                console.error('Collections list element not found');
+                return;
+            }
+            
+            if (this.collections.length === 0) {
+                collectionsList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <span class="material-icons">collections</span>
+                        </div>
+                        <h3>No Collections Yet</h3>
+                        <p>Create your first collection to organize your categories!</p>
+                        <button class="btn-primary" onclick="window.app.showCreateCollectionForm()">
+                            <span class="material-icons">add</span>
+                            <span>Create Collection</span>
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            collectionsList.innerHTML = '';
+            
+            this.collections.forEach(collection => {
+                const collectionCard = document.createElement('div');
+                collectionCard.className = 'collection-card';
+                collectionCard.dataset.collectionId = collection.id;
+                
+                // Get category names for this collection
+                const categoryNames = collection.categoryIds
+                    .map(id => this.categories.find(c => c.id === id)?.name)
+                    .filter(name => name);
+                
+                collectionCard.innerHTML = `
+                    <div class="collection-header">
+                        <div class="collection-icon">
+                            <span class="material-icons">collections</span>
+                        </div>
+                        <div class="collection-info">
+                            <h3>${this.escapeHtml(collection.name)}</h3>
+                            <p>${this.escapeHtml(collection.description || 'No description')}</p>
+                        </div>
+                    </div>
+                    <div class="collection-categories">
+                        ${categoryNames.map(name => 
+                            `<span class="collection-category-tag">${this.escapeHtml(name)}</span>`
+                        ).join('')}
+                    </div>
+                `;
+                
+                // Add click handler to view collection
+                collectionCard.addEventListener('click', () => {
+                    this.viewCollection(collection.id);
+                });
+                
+                collectionsList.appendChild(collectionCard);
+            });
+            
+            console.log('Collections rendered:', this.collections.length);
+        } catch (error) {
+            console.error('Error rendering collections:', error);
+        }
+    }
+    
+    showCreateCollectionForm() {
+        try {
+            this.navigateTo('createCollection');
+            this.populateCategoryCheckboxes();
+            this.bindCollectionFormEvents();
+        } catch (error) {
+            console.error('Error showing create collection form:', error);
+        }
+    }
+    
+    populateCategoryCheckboxes() {
+        try {
+            const categoryCheckboxes = document.getElementById('categoryCheckboxes');
+            if (!categoryCheckboxes) return;
+            
+            categoryCheckboxes.innerHTML = '';
+            
+            this.categories.forEach(category => {
+                const checkboxItem = document.createElement('div');
+                checkboxItem.className = 'category-checkbox-item';
+                
+                checkboxItem.innerHTML = `
+                    <input type="checkbox" id="category-${category.id}" value="${category.id}">
+                    <label for="category-${category.id}">${this.escapeHtml(category.name)}</label>
+                `;
+                
+                categoryCheckboxes.appendChild(checkboxItem);
+            });
+        } catch (error) {
+            console.error('Error populating category checkboxes:', error);
+        }
+    }
+    
+    bindCollectionFormEvents() {
+        try {
+            const collectionForm = document.getElementById('collectionForm');
+            if (collectionForm) {
+                collectionForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.createCollection();
+                });
+            }
+        } catch (error) {
+            console.error('Error binding collection form events:', error);
+        }
+    }
+    
+    createCollection() {
+        try {
+            const nameInput = document.getElementById('collectionName');
+            const descriptionInput = document.getElementById('collectionDescription');
+            const checkboxes = document.querySelectorAll('#categoryCheckboxes input[type="checkbox"]:checked');
+            
+            if (!nameInput || !descriptionInput) {
+                console.error('Collection form inputs not found');
+                return;
+            }
+            
+            const name = nameInput.value.trim();
+            const description = descriptionInput.value.trim();
+            const categoryIds = Array.from(checkboxes).map(cb => cb.value);
+            
+            if (!name) {
+                alert('Please enter a collection name');
+                return;
+            }
+            
+            if (categoryIds.length === 0) {
+                alert('Please select at least one category');
+                return;
+            }
+            
+            const collection = {
+                id: Date.now().toString(),
+                name: name,
+                description: description,
+                categoryIds: categoryIds,
+                createdAt: new Date().toISOString()
+            };
+            
+            this.collections.push(collection);
+            this.saveData();
+            
+            // Reset form
+            nameInput.value = '';
+            descriptionInput.value = '';
+            checkboxes.forEach(cb => cb.checked = false);
+            
+            // Navigate back to collections
+            this.navigateTo('collections');
+            
+            console.log('Collection created:', collection);
+        } catch (error) {
+            console.error('Error creating collection:', error);
+        }
+    }
+    
+    viewCollection(collectionId) {
+        try {
+            const collection = this.collections.find(c => c.id === collectionId);
+            if (!collection) {
+                console.error('Collection not found:', collectionId);
+                return;
+            }
+            
+            // For now, just show an alert with collection details
+            // In the future, this could show a dedicated collection view
+            const categoryNames = collection.categoryIds
+                .map(id => this.categories.find(c => c.id === id)?.name)
+                .filter(name => name)
+                .join(', ');
+            
+            alert(`Collection: ${collection.name}\n\nDescription: ${collection.description || 'No description'}\n\nCategories: ${categoryNames}`);
+        } catch (error) {
+            console.error('Error viewing collection:', error);
+        }
+    }
+    
+    // Render created outfits in the add outfit view
+    renderCreatedOutfits() {
+        try {
+            const createdOutfitsList = document.getElementById('createdOutfitsList');
+            if (!createdOutfitsList) {
+                console.error('Created outfits list element not found');
+                return;
+            }
+            
+            // Get all outfits from all categories
+            const allOutfits = [];
+            this.categories.forEach(category => {
+                if (category.outfits) {
+                    category.outfits.forEach(outfit => {
+                        allOutfits.push({
+                            ...outfit,
+                            categoryName: category.name
+                        });
+                    });
+                }
+            });
+            
+            if (allOutfits.length === 0) {
+                createdOutfitsList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <span class="material-icons">checkroom</span>
+                        </div>
+                        <h3>No Outfits Yet</h3>
+                        <p>Create your first outfit by dragging articles to the canvas above</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            createdOutfitsList.innerHTML = '';
+            
+            allOutfits.forEach(outfit => {
+                const outfitCard = document.createElement('div');
+                outfitCard.className = 'created-outfit-card';
+                outfitCard.dataset.outfitId = outfit.id;
+                
+                const previewImage = outfit.previewImage || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik04MCA0MEgxMjBWODBIODBWNDBaIiBmaWxsPSIjOTlBM0FGIi8+Cjwvc3ZnPg==';
+                
+                outfitCard.innerHTML = `
+                    <img src="${previewImage}" alt="${this.escapeHtml(outfit.name)}" class="created-outfit-preview">
+                    <h4 class="created-outfit-name">${this.escapeHtml(outfit.name)}</h4>
+                `;
+                
+                // Add click handler to edit outfit
+                outfitCard.addEventListener('click', () => {
+                    this.editOutfit(outfit.id);
+                });
+                
+                createdOutfitsList.appendChild(outfitCard);
+            });
+            
+            console.log('Created outfits rendered:', allOutfits.length);
+        } catch (error) {
+            console.error('Error rendering created outfits:', error);
         }
     }
 
@@ -1306,7 +1857,12 @@ class LookbookApp {
                 return;
             }
             
-            // Handle drops on outfit canvas
+            // Touch-friendly drag and drop variables
+            this.draggedElement = null;
+            this.dragOffset = { x: 0, y: 0 };
+            this.isDragging = false;
+            
+            // Handle drops on outfit canvas (both mouse and touch)
             outfitCanvas.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 outfitCanvas.style.borderColor = '#8b5cf6';
@@ -1325,16 +1881,149 @@ class LookbookApp {
                 this.addArticleToOutfit(articleId, e.offsetX, e.offsetY);
             });
 
-            // Make articles draggable
+            // Make articles draggable (mouse)
             document.addEventListener('dragstart', (e) => {
                 if (e.target.classList.contains('article-item')) {
                     e.dataTransfer.setData('text/plain', e.target.dataset.articleId);
                 }
             });
             
-            console.log('Drag and drop initialized');
+            // Touch events for mobile drag and drop
+            document.addEventListener('touchstart', (e) => {
+                const articleItem = e.target.closest('.article-item');
+                if (articleItem) {
+                    e.preventDefault();
+                    this.startTouchDrag(articleItem, e.touches[0]);
+                }
+            }, { passive: false });
+            
+            document.addEventListener('touchmove', (e) => {
+                if (this.isDragging && this.draggedElement) {
+                    e.preventDefault();
+                    this.updateTouchDrag(e.touches[0]);
+                }
+            }, { passive: false });
+            
+            document.addEventListener('touchend', (e) => {
+                if (this.isDragging) {
+                    e.preventDefault();
+                    this.endTouchDrag(e.changedTouches[0]);
+                }
+            }, { passive: false });
+            
+            console.log('Drag and drop initialized with touch support');
         } catch (error) {
             console.error('Error initializing drag and drop:', error);
+        }
+    }
+    
+    startTouchDrag(element, touch) {
+        try {
+            this.draggedElement = element;
+            this.isDragging = true;
+            
+            const rect = element.getBoundingClientRect();
+            this.dragOffset = {
+                x: touch.clientX - rect.left,
+                y: touch.clientY - rect.top
+            };
+            
+            // Create a visual feedback element
+            this.dragPreview = element.cloneNode(true);
+            this.dragPreview.style.position = 'fixed';
+            this.dragPreview.style.pointerEvents = 'none';
+            this.dragPreview.style.zIndex = '1000';
+            this.dragPreview.style.opacity = '0.8';
+            this.dragPreview.style.transform = 'scale(1.1)';
+            this.dragPreview.style.left = (touch.clientX - this.dragOffset.x) + 'px';
+            this.dragPreview.style.top = (touch.clientY - this.dragOffset.y) + 'px';
+            document.body.appendChild(this.dragPreview);
+            
+            // Add visual feedback to original element
+            element.style.opacity = '0.5';
+            
+            console.log('Touch drag started');
+        } catch (error) {
+            console.error('Error starting touch drag:', error);
+        }
+    }
+    
+    updateTouchDrag(touch) {
+        try {
+            if (this.dragPreview) {
+                this.dragPreview.style.left = (touch.clientX - this.dragOffset.x) + 'px';
+                this.dragPreview.style.top = (touch.clientY - this.dragOffset.y) + 'px';
+            }
+            
+            // Check if we're over the outfit canvas
+            const outfitCanvas = document.getElementById('outfitCanvas');
+            if (outfitCanvas) {
+                const canvasRect = outfitCanvas.getBoundingClientRect();
+                const isOverCanvas = touch.clientX >= canvasRect.left && 
+                                   touch.clientX <= canvasRect.right &&
+                                   touch.clientY >= canvasRect.top && 
+                                   touch.clientY <= canvasRect.bottom;
+                
+                if (isOverCanvas) {
+                    outfitCanvas.style.borderColor = '#8b5cf6';
+                    outfitCanvas.style.backgroundColor = 'rgba(139, 92, 246, 0.1)';
+                } else {
+                    outfitCanvas.style.borderColor = '#6366f1';
+                    outfitCanvas.style.backgroundColor = 'transparent';
+                }
+            }
+        } catch (error) {
+            console.error('Error updating touch drag:', error);
+        }
+    }
+    
+    endTouchDrag(touch) {
+        try {
+            if (!this.draggedElement) return;
+            
+            // Check if we're over the outfit canvas
+            const outfitCanvas = document.getElementById('outfitCanvas');
+            let droppedOnCanvas = false;
+            
+            if (outfitCanvas) {
+                const canvasRect = outfitCanvas.getBoundingClientRect();
+                droppedOnCanvas = touch.clientX >= canvasRect.left && 
+                                touch.clientX <= canvasRect.right &&
+                                touch.clientY >= canvasRect.top && 
+                                touch.clientY <= canvasRect.bottom;
+                
+                // Reset canvas styling
+                outfitCanvas.style.borderColor = '#6366f1';
+                outfitCanvas.style.backgroundColor = 'transparent';
+            }
+            
+            if (droppedOnCanvas) {
+                // Calculate position relative to canvas
+                const canvasRect = outfitCanvas.getBoundingClientRect();
+                const x = touch.clientX - canvasRect.left;
+                const y = touch.clientY - canvasRect.top;
+                
+                // Add article to outfit
+                const articleId = this.draggedElement.dataset.articleId;
+                this.addArticleToOutfit(articleId, x, y);
+            }
+            
+            // Clean up
+            if (this.dragPreview) {
+                document.body.removeChild(this.dragPreview);
+                this.dragPreview = null;
+            }
+            
+            if (this.draggedElement) {
+                this.draggedElement.style.opacity = '1';
+            }
+            
+            this.draggedElement = null;
+            this.isDragging = false;
+            
+            console.log('Touch drag ended, dropped on canvas:', droppedOnCanvas);
+        } catch (error) {
+            console.error('Error ending touch drag:', error);
         }
     }
 
@@ -1372,8 +2061,10 @@ class LookbookApp {
             itemElement.style.left = outfitItem.x + 'px';
             itemElement.style.top = outfitItem.y + 'px';
             
+            const imageSrc = outfitItem.article.processedImage || outfitItem.article.image || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yMCAyMEg2MFY2MEgyMFYyMFoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+';
+            
             itemElement.innerHTML = `
-                <img src="${outfitItem.article.image}" alt="${outfitItem.article.name}">
+                <img src="${imageSrc}" alt="${this.escapeHtml(outfitItem.article.name)}">
                 <button class="remove-btn" onclick="app.removeOutfitItem('${outfitItem.id}')">×</button>
             `;
             
@@ -2125,7 +2816,8 @@ class LookbookApp {
                 const savePromises = [
                     this.saveToFirestore('categories', this.categories),
                     this.saveToFirestore('articles', this.articles),
-                    this.saveToFirestore('outfits', this.outfits)
+                    this.saveToFirestore('outfits', this.outfits),
+                    this.saveToFirestore('collections', this.collections)
                 ];
                 
                 const results = await Promise.allSettled(savePromises);
