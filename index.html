@@ -71,6 +71,22 @@
                 <h2>Create New Category</h2>
                 <form id="categoryForm" class="form">
                     <input type="text" id="categoryName" placeholder="Category Name (e.g., Office, Work, School)" required>
+                    
+                    <!-- Category Icon Upload Section -->
+                    <div class="category-icon-section">
+                        <label for="categoryIcon" class="icon-upload-label">
+                            <span class="material-icons">image</span>
+                            <span>Category Icon (Optional)</span>
+                        </label>
+                        <input type="file" id="categoryIcon" accept="image/*" style="display: none;">
+                        <div id="categoryIconPreview" class="icon-preview hidden">
+                            <img id="categoryIconImg" src="" alt="Category Icon">
+                            <button type="button" id="removeCategoryIcon" class="remove-icon-btn">
+                                <span class="material-icons">close</span>
+                            </button>
+                        </div>
+                    </div>
+                    
                     <button type="submit" class="btn-primary">Create Category</button>
                 </form>
                 <button class="btn-secondary back-btn" data-back="categories">Back</button>

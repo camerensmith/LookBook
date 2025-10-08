@@ -19,6 +19,9 @@ class LookbookApp {
         this.currentTool = 'brush';
         this.brushSize = 20;
         this.isDrawing = false;
+        this.isEditingOutfit = false;
+        this.editingOutfitId = null;
+        this.currentCategoryIcon = null;
         
         console.log('LookbookApp initialized with:', {
             categories: this.categories.length,
@@ -166,9 +169,15 @@ class LookbookApp {
             
             navButtons.forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    const action = e.target.dataset.action;
+                    // Handle clicks on child elements (like spans)
+                    const button = e.target.closest('.nav-btn');
+                    const action = button ? button.dataset.action : e.target.dataset.action;
                     console.log('Navigation clicked:', action);
-                    this.navigateTo(action);
+                    if (action) {
+                        this.navigateTo(action);
+                    } else {
+                        console.error('No action found for navigation button:', e.target);
+                    }
                 });
             });
 
@@ -178,9 +187,15 @@ class LookbookApp {
             
             backButtons.forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    const backTo = e.target.dataset.back;
+                    // Handle clicks on child elements (like spans)
+                    const button = e.target.closest('.back-btn');
+                    const backTo = button ? button.dataset.back : e.target.dataset.back;
                     console.log('Back button clicked:', backTo);
-                    this.navigateTo(backTo);
+                    if (backTo) {
+                        this.navigateTo(backTo);
+                    } else {
+                        console.error('No back target found for back button:', e.target);
+                    }
                 });
             });
 
@@ -194,6 +209,22 @@ class LookbookApp {
                 });
             } else {
                 console.error('Category form not found');
+            }
+
+            // Category icon upload events
+            const categoryIconInput = document.getElementById('categoryIcon');
+            const categoryIconPreview = document.getElementById('categoryIconPreview');
+            const categoryIconImg = document.getElementById('categoryIconImg');
+            const removeCategoryIconBtn = document.getElementById('removeCategoryIcon');
+
+            if (categoryIconInput && categoryIconPreview && categoryIconImg && removeCategoryIconBtn) {
+                categoryIconInput.addEventListener('change', (e) => {
+                    this.handleCategoryIconUpload(e);
+                });
+
+                removeCategoryIconBtn.addEventListener('click', () => {
+                    this.removeCategoryIcon();
+                });
             }
 
             const articleForm = document.getElementById('articleForm');
@@ -494,6 +525,7 @@ class LookbookApp {
             const category = {
                 id: Date.now().toString(),
                 name: name,
+                icon: this.currentCategoryIcon || null, // Add icon if uploaded
                 createdAt: new Date().toISOString()
             };
 
@@ -501,13 +533,62 @@ class LookbookApp {
             this.saveData();
             this.updateCategorySelect();
             this.navigateTo('categories');
+            
+            // Reset form
             nameInput.value = '';
+            this.removeCategoryIcon();
             
             console.log('Category created successfully:', category);
             alert('Category created successfully!');
         } catch (error) {
             console.error('Error creating category:', error);
             alert('Error creating category. Please try again.');
+        }
+    }
+
+    handleCategoryIconUpload(event) {
+        try {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.currentCategoryIcon = e.target.result;
+                    this.showCategoryIconPreview(e.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        } catch (error) {
+            console.error('Error handling category icon upload:', error);
+        }
+    }
+
+    showCategoryIconPreview(imageData) {
+        try {
+            const preview = document.getElementById('categoryIconPreview');
+            const img = document.getElementById('categoryIconImg');
+            
+            if (preview && img) {
+                img.src = imageData;
+                preview.classList.remove('hidden');
+            }
+        } catch (error) {
+            console.error('Error showing category icon preview:', error);
+        }
+    }
+
+    removeCategoryIcon() {
+        try {
+            this.currentCategoryIcon = null;
+            
+            const preview = document.getElementById('categoryIconPreview');
+            const input = document.getElementById('categoryIcon');
+            
+            if (preview && input) {
+                preview.classList.add('hidden');
+                input.value = '';
+            }
+        } catch (error) {
+            console.error('Error removing category icon:', error);
         }
     }
 
@@ -623,10 +704,18 @@ class LookbookApp {
         // Use the @imgly background removal package
         try {
             console.log('Removing background with @imgly...');
+            
+            // Check if removeBackground function is available
+            if (typeof window.removeBackground !== 'function') {
+                console.warn('Background removal not available, using original image');
+                return imageData;
+            }
+            
             const blob = await window.removeBackground(imageData);
             return URL.createObjectURL(blob);
         } catch (error) {
             console.error('Background removal failed:', error);
+            console.log('Falling back to original image');
             // Fallback to original image
             return imageData;
         }
@@ -877,11 +966,23 @@ class LookbookApp {
                 return;
             }
 
+            // Create a default category if none exist
+            if (this.categories.length === 0) {
+                const defaultCategory = {
+                    id: 'default-' + Date.now(),
+                    name: 'My Articles',
+                    createdAt: new Date().toISOString()
+                };
+                this.categories.push(defaultCategory);
+                console.log('Created default category:', defaultCategory);
+            }
+
             const article = {
                 id: Date.now().toString(),
                 name: name,
                 tags: tags ? tags.split(',').map(t => t.trim()) : [],
                 image: this.processedImage,
+                categoryId: this.categories[0].id, // Assign to first category
                 createdAt: new Date().toISOString()
             };
 
@@ -1162,6 +1263,55 @@ class LookbookApp {
         }
     }
 
+    async generateOutfitPreview() {
+        try {
+            const canvas = document.getElementById('outfitCanvas');
+            if (!canvas) {
+                console.error('Outfit canvas not found');
+                return null;
+            }
+
+            // Create a temporary canvas to capture the outfit
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // Set canvas size to match the outfit canvas
+            const rect = canvas.getBoundingClientRect();
+            tempCanvas.width = rect.width;
+            tempCanvas.height = rect.height;
+            
+            // Fill with background color
+            tempCtx.fillStyle = 'rgba(99, 102, 241, 0.05)';
+            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            
+            // Draw each outfit item at its exact position
+            for (const item of this.currentOutfitItems) {
+                const article = this.articles.find(a => a.id === item.articleId);
+                if (article && article.image) {
+                    const img = new Image();
+                    await new Promise((resolve, reject) => {
+                        img.onload = () => {
+                            // Draw the article image at its saved position
+                            tempCtx.drawImage(img, item.x, item.y, 80, 80);
+                            resolve();
+                        };
+                        img.onerror = reject;
+                        img.src = article.image;
+                    });
+                }
+            }
+            
+            // Convert canvas to data URL
+            const dataURL = tempCanvas.toDataURL('image/png');
+            console.log('Outfit preview generated');
+            return dataURL;
+            
+        } catch (error) {
+            console.error('Error generating outfit preview:', error);
+            return null;
+        }
+    }
+
     clearOutfit() {
         try {
             this.currentOutfitItems.forEach(item => {
@@ -1210,7 +1360,7 @@ class LookbookApp {
         }
     }
 
-    saveOutfit() {
+    async saveOutfit() {
         try {
             const nameInput = document.getElementById('outfitName');
             const categorySelect = document.getElementById('outfitCategory');
@@ -1230,19 +1380,48 @@ class LookbookApp {
                 return;
             }
 
-            const outfit = {
-                id: Date.now().toString(),
-                name: name,
-                categoryId: categoryId,
-                items: this.currentOutfitItems.map(item => ({
-                    articleId: item.articleId,
-                    x: item.x,
-                    y: item.y
-                })),
-                createdAt: new Date().toISOString()
-            };
+            // Generate outfit preview image
+            const previewImage = await this.generateOutfitPreview();
 
-            this.outfits.push(outfit);
+            if (this.isEditingOutfit && this.editingOutfitId) {
+                // Update existing outfit
+                const outfitIndex = this.outfits.findIndex(o => o.id === this.editingOutfitId);
+                if (outfitIndex !== -1) {
+                    this.outfits[outfitIndex] = {
+                        ...this.outfits[outfitIndex],
+                        name: name,
+                        categoryId: categoryId,
+                        items: this.currentOutfitItems.map(item => ({
+                            articleId: item.articleId,
+                            x: item.x,
+                            y: item.y
+                        })),
+                        previewImage: previewImage, // Update the preview image
+                        updatedAt: new Date().toISOString()
+                    };
+                    console.log('Outfit updated:', this.outfits[outfitIndex]);
+                }
+                // Reset editing mode
+                this.isEditingOutfit = false;
+                this.editingOutfitId = null;
+            } else {
+                // Create new outfit
+                const outfit = {
+                    id: Date.now().toString(),
+                    name: name,
+                    categoryId: categoryId,
+                    items: this.currentOutfitItems.map(item => ({
+                        articleId: item.articleId,
+                        x: item.x,
+                        y: item.y
+                    })),
+                    previewImage: previewImage, // Add the static preview image
+                    createdAt: new Date().toISOString()
+                };
+                this.outfits.push(outfit);
+                console.log('New outfit created:', outfit);
+            }
+
             this.saveData();
             
             // Reset form
@@ -1337,10 +1516,13 @@ class LookbookApp {
             
             const outfitCount = outfitCounts[category.id] || 0;
             
+            // Use custom icon if available, otherwise show default folder icon
+            const iconContent = category.icon 
+                ? `<div class="category-custom-icon"><img src="${category.icon}" alt="${category.name}"></div>`
+                : `<div class="category-icon"><span class="material-icons">folder</span></div>`;
+            
             categoryElement.innerHTML = `
-                <div class="category-icon">
-                    <span class="material-icons">folder</span>
-                </div>
+                ${iconContent}
                 <h3>${this.escapeHtml(category.name)}</h3>
                 <div class="outfit-count">${outfitCount} outfit${outfitCount !== 1 ? 's' : ''}</div>
             `;
@@ -1422,10 +1604,13 @@ class LookbookApp {
                         this.showOutfitDetail(outfit);
                     }, { passive: true });
                     
+                    // Use preview image if available, otherwise show icon
+                    const previewContent = outfit.previewImage 
+                        ? `<div class="outfit-preview"><img src="${outfit.previewImage}" alt="${outfit.name}"></div>`
+                        : `<div class="outfit-icon"><span class="material-icons">checkroom</span></div>`;
+                    
                     outfitElement.innerHTML = `
-                        <div class="outfit-icon">
-                            <span class="material-icons">checkroom</span>
-                        </div>
+                        ${previewContent}
                         <h3>${this.escapeHtml(outfit.name)}</h3>
                         <p>${outfit.items.length} item${outfit.items.length !== 1 ? 's' : ''}</p>
                     `;
@@ -1477,6 +1662,10 @@ class LookbookApp {
     editOutfit() {
         try {
             if (!this.currentOutfit) return;
+            
+            // Set editing mode flag
+            this.isEditingOutfit = true;
+            this.editingOutfitId = this.currentOutfit.id;
             
             // Populate outfit builder with current outfit
             this.currentOutfitItems = this.currentOutfit.items.map(item => {
@@ -1621,12 +1810,15 @@ document.addEventListener('DOMContentLoaded', () => {
 // Service Worker Registration for PWA
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
+        navigator.serviceWorker.register('./sw.js')
             .then(registration => {
-                console.log('SW registered: ', registration);
+                console.log('SW registered successfully: ', registration);
             })
             .catch(registrationError => {
-                console.log('SW registration failed: ', registrationError);
+                console.error('SW registration failed: ', registrationError);
+                // Don't show error to user as it's not critical for app functionality
             });
     });
+} else {
+    console.log('Service Worker not supported in this browser');
 }

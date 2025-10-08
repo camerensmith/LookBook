@@ -148,6 +148,21 @@ body {
     font-size: 2rem;
 }
 
+.category-custom-icon {
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.category-custom-icon img {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 .category-card h3 {
     color: #6366f1;
     margin-bottom: 0.25rem;
@@ -286,6 +301,25 @@ body {
     font-weight: 500;
 }
 
+/* Outfit Preview Images */
+.outfit-preview {
+    margin-bottom: 0.5rem;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f5f5f5;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.outfit-preview img {
+    width: 100%;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
 /* Forms */
 .form {
     background: rgba(255, 255, 255, 0.95);
@@ -294,6 +328,70 @@ body {
     margin: 1rem 0;
     backdrop-filter: blur(20px);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Category Icon Upload */
+.category-icon-section {
+    margin: 1rem 0;
+}
+
+.icon-upload-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    border: 2px dashed #6366f1;
+    border-radius: 12px;
+    background: rgba(99, 102, 241, 0.05);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #6366f1;
+    font-weight: 500;
+}
+
+.icon-upload-label:hover {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: #8b5cf6;
+}
+
+.icon-upload-label .material-icons {
+    font-size: 1.5rem;
+}
+
+.icon-preview {
+    margin-top: 1rem;
+    position: relative;
+    display: inline-block;
+}
+
+.icon-preview img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.remove-icon-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.remove-icon-btn:hover {
+    background: #dc2626;
 }
 
 .form input,
@@ -699,6 +797,11 @@ body {
         font-size: 1.5rem;
     }
     
+    .category-custom-icon img {
+        width: 36px;
+        height: 36px;
+    }
+    
     .category-card h3 {
         font-size: 0.8rem;
     }
@@ -749,6 +852,14 @@ body {
     
     .outfit-card p {
         font-size: 0.75rem;
+    }
+    
+    .outfit-preview {
+        min-height: 70px;
+    }
+    
+    .outfit-preview img {
+        height: 70px;
     }
 }
 
@@ -801,6 +912,11 @@ body {
         font-size: 0.65rem;
     }
     
+    .category-custom-icon img {
+        width: 32px;
+        height: 32px;
+    }
+    
     .category-outfits {
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
         gap: 0.5rem;
@@ -821,6 +937,14 @@ body {
     
     .outfit-card p {
         font-size: 0.7rem;
+    }
+    
+    .outfit-preview {
+        min-height: 60px;
+    }
+    
+    .outfit-preview img {
+        height: 60px;
     }
     
     .empty-state {
