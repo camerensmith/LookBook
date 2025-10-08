@@ -33,6 +33,52 @@ body {
     z-index: 100;
 }
 
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.sync-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: 20px;
+    font-size: 0.8rem;
+    transition: all 0.3s ease;
+    color: #6366f1;
+}
+
+.sync-status.syncing {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4caf50;
+}
+
+.sync-status.error {
+    background: rgba(244, 67, 54, 0.2);
+    color: #f44336;
+}
+
+.sync-icon {
+    font-size: 16px;
+    animation: spin 1s linear infinite;
+}
+
+.sync-status.synced .sync-icon {
+    animation: none;
+}
+
+.sync-status.error .sync-icon {
+    animation: none;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 .header h1 {
     color: #6366f1;
     font-size: 1.5rem;
@@ -75,6 +121,16 @@ body {
     transition: all 0.3s;
     white-space: nowrap;
     box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    min-height: 48px;
+    min-width: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .nav-btn:hover {
@@ -122,6 +178,7 @@ body {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     backdrop-filter: blur(20px);
     min-height: 100px;
+    min-width: 120px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -175,6 +232,39 @@ body {
 .category-card .outfit-count {
     color: #666;
     font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* Create New Card Styling */
+.create-new-card {
+    border: 2px dashed #6366f1;
+    background: rgba(99, 102, 241, 0.05);
+    transition: all 0.2s ease;
+}
+
+.create-new-card:hover {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: #8b5cf6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+.create-new-card:active {
+    transform: scale(0.98);
+    background: rgba(99, 102, 241, 0.15);
+}
+
+.create-icon {
+    color: #6366f1;
+}
+
+.create-new-card h3 {
+    color: #6366f1;
+    font-weight: 600;
+}
+
+.create-new-card .outfit-count {
+    color: #8b5cf6;
     font-weight: 500;
 }
 
@@ -810,6 +900,10 @@ body {
         font-size: 0.7rem;
     }
     
+    .create-new-card {
+        border-width: 1px;
+    }
+    
     .main-nav {
         padding: 0.75rem;
         gap: 0.25rem;
@@ -818,10 +912,12 @@ body {
     }
     
     .nav-btn {
-        padding: 0.5rem 1rem;
+        padding: 0.75rem 1rem;
         font-size: 0.8rem;
         white-space: nowrap;
-        min-width: fit-content;
+        min-width: 48px;
+        min-height: 48px;
+        flex-shrink: 0;
     }
     
     .nav-btn .material-icons {
@@ -910,6 +1006,10 @@ body {
     
     .category-card .outfit-count {
         font-size: 0.65rem;
+    }
+    
+    .create-new-card {
+        border-width: 1px;
     }
     
     .category-custom-icon img {
@@ -1254,6 +1354,14 @@ body {
 
 /* Touch-friendly interactions */
 @media (hover: none) and (pointer: coarse) {
+    .category-card {
+        min-width: 100px;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+    
     .category-card:hover {
         transform: none;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -1262,6 +1370,23 @@ body {
     .category-card:active {
         transform: scale(0.95);
         background: rgba(99, 102, 241, 0.1);
+    }
+    
+    .nav-btn {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+    
+    .create-new-card:hover {
+        transform: none;
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+    }
+    
+    .create-new-card:active {
+        transform: scale(0.95);
+        background: rgba(99, 102, 241, 0.15);
     }
     
     .nav-btn:hover {
@@ -1276,6 +1401,7 @@ body {
 /* Reduce motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
     .category-card,
+    .create-new-card,
     .nav-btn,
     .btn-primary,
     .btn-secondary {
@@ -1283,6 +1409,7 @@ body {
     }
     
     .category-card:hover,
+    .create-new-card:hover,
     .nav-btn:hover {
         transform: none;
     }
@@ -1295,6 +1422,15 @@ body {
     }
     
     .category-card h3 {
+        color: #000;
+    }
+    
+    .create-new-card {
+        border: 3px solid #6366f1;
+        background: rgba(99, 102, 241, 0.1);
+    }
+    
+    .create-new-card h3 {
         color: #000;
     }
 }

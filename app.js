@@ -23,6 +23,10 @@ class LookbookApp {
         this.editingOutfitId = null;
         this.currentCategoryIcon = null;
         
+        // Firestore
+        this.db = null;
+        this.syncStatus = 'offline'; // offline, syncing, synced, error
+        
         console.log('LookbookApp initialized with:', {
             categories: this.categories.length,
             articles: this.articles.length,
@@ -32,11 +36,13 @@ class LookbookApp {
         this.init();
     }
 
-    init() {
+    async init() {
         try {
             this.optimizeForMobile();
             this.bindEvents();
-            this.loadData();
+            
+            // Load data asynchronously
+            await this.loadData();
             
             // Defer heavy operations for mobile performance
             if (this.isMobile()) {
@@ -88,40 +94,147 @@ class LookbookApp {
         if (this.user && this.user.uid) return `lookbook_${this.user.uid}_${base}`;
         return `lookbook_${base}`;
     }
-
-    loadData() {
+    
+    // ===== Firestore Methods =====
+    initFirestore() {
         try {
-            const catKey = this.getStorageKey('categories');
-            const artKey = this.getStorageKey('articles');
-            const outfitKey = this.getStorageKey('outfits');
+            if (firebase && firebase.firestore) {
+                this.db = firebase.firestore();
+                console.log('Firestore initialized');
+                return true;
+            } else {
+                console.warn('Firestore not available');
+                return false;
+            }
+        } catch (error) {
+            console.error('Error initializing Firestore:', error);
+            return false;
+        }
+    }
+    
+    updateSyncStatus(status, message = '') {
+        this.syncStatus = status;
+        const syncElement = document.getElementById('syncStatus');
+        if (!syncElement) return;
+        
+        syncElement.className = `sync-status ${status}`;
+        
+        const textElement = syncElement.querySelector('.sync-text');
+        if (textElement) {
+            switch (status) {
+                case 'offline':
+                    textElement.textContent = 'Offline';
+                    break;
+                case 'syncing':
+                    textElement.textContent = message || 'Syncing...';
+                    break;
+                case 'synced':
+                    textElement.textContent = 'Synced';
+                    break;
+                case 'error':
+                    textElement.textContent = message || 'Sync Error';
+                    break;
+            }
+        }
+        
+        // Show/hide based on status
+        if (status === 'offline' || status === 'synced') {
+            syncElement.classList.add('hidden');
+        } else {
+            syncElement.classList.remove('hidden');
+        }
+    }
+    
+    async saveToFirestore(collection, data) {
+        if (!this.db || !this.user) {
+            console.log('Firestore not available or user not signed in, using localStorage');
+            return false;
+        }
+        
+        try {
+            this.updateSyncStatus('syncing', 'Saving...');
+            
+            const docRef = this.db.collection('users').doc(this.user.uid).collection(collection).doc('data');
+            await docRef.set({
+                data: data,
+                lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+                userId: this.user.uid
+            });
+            
+            this.updateSyncStatus('synced');
+            console.log(`Data saved to Firestore: ${collection}`);
+            return true;
+        } catch (error) {
+            console.error(`Error saving to Firestore (${collection}):`, error);
+            this.updateSyncStatus('error', 'Save failed');
+            return false;
+        }
+    }
+    
+    async loadFromFirestore(collection) {
+        if (!this.db || !this.user) {
+            console.log('Firestore not available or user not signed in, using localStorage');
+            return null;
+        }
+        
+        try {
+            this.updateSyncStatus('syncing', 'Loading...');
+            
+            const docRef = this.db.collection('users').doc(this.user.uid).collection(collection).doc('data');
+            const doc = await docRef.get();
+            
+            if (doc.exists) {
+                const data = doc.data();
+                this.updateSyncStatus('synced');
+                console.log(`Data loaded from Firestore: ${collection}`);
+                return data.data || [];
+            } else {
+                this.updateSyncStatus('synced');
+                console.log(`No data found in Firestore: ${collection}`);
+                return [];
+            }
+        } catch (error) {
+            console.error(`Error loading from Firestore (${collection}):`, error);
+            this.updateSyncStatus('error', 'Load failed');
+            return null;
+        }
+    }
 
-            // Use try-catch for each localStorage operation to prevent total failure
-            try {
-                this.categories = JSON.parse(localStorage.getItem(catKey)) || [];
-            } catch (e) {
-                console.warn('Failed to load categories, using empty array');
-                this.categories = [];
-            }
-            
-            try {
-                this.articles = JSON.parse(localStorage.getItem(artKey)) || [];
-            } catch (e) {
-                console.warn('Failed to load articles, using empty array');
-                this.articles = [];
-            }
-            
-            try {
-                this.outfits = JSON.parse(localStorage.getItem(outfitKey)) || [];
-            } catch (e) {
-                console.warn('Failed to load outfits, using empty array');
-                this.outfits = [];
+    async loadData() {
+        try {
+            // Try to load from Firestore first if user is signed in
+            if (this.user && this.db) {
+                console.log('Loading data from Firestore...');
+                
+                const [firestoreCategories, firestoreArticles, firestoreOutfits] = await Promise.all([
+                    this.loadFromFirestore('categories'),
+                    this.loadFromFirestore('articles'),
+                    this.loadFromFirestore('outfits')
+                ]);
+                
+                // Use Firestore data if available, otherwise fall back to localStorage
+                this.categories = firestoreCategories !== null ? firestoreCategories : this.loadFromLocalStorage('categories');
+                this.articles = firestoreArticles !== null ? firestoreArticles : this.loadFromLocalStorage('articles');
+                this.outfits = firestoreOutfits !== null ? firestoreOutfits : this.loadFromLocalStorage('outfits');
+                
+                // If we got data from Firestore, also save it to localStorage as backup
+                if (firestoreCategories !== null || firestoreArticles !== null || firestoreOutfits !== null) {
+                    this.saveToLocalStorage();
+                }
+            } else {
+                // Fall back to localStorage
+                console.log('Loading data from localStorage...');
+                this.categories = this.loadFromLocalStorage('categories');
+                this.articles = this.loadFromLocalStorage('articles');
+                this.outfits = this.loadFromLocalStorage('outfits');
             }
 
             console.log('Data loaded', {
                 user: this.user ? this.user.uid : 'guest',
                 categories: this.categories.length,
                 articles: this.articles.length,
-                outfits: this.outfits.length
+                outfits: this.outfits.length,
+                source: this.user && this.db ? 'Firestore' : 'localStorage'
             });
         } catch (error) {
             console.error('Error loading data:', error);
@@ -129,6 +242,27 @@ class LookbookApp {
             this.categories = [];
             this.articles = [];
             this.outfits = [];
+        }
+    }
+    
+    loadFromLocalStorage(type) {
+        try {
+            const key = this.getStorageKey(type);
+            return JSON.parse(localStorage.getItem(key)) || [];
+        } catch (e) {
+            console.warn(`Failed to load ${type} from localStorage, using empty array`);
+            return [];
+        }
+    }
+    
+    saveToLocalStorage() {
+        try {
+            localStorage.setItem(this.getStorageKey('categories'), JSON.stringify(this.categories));
+            localStorage.setItem(this.getStorageKey('articles'), JSON.stringify(this.articles));
+            localStorage.setItem(this.getStorageKey('outfits'), JSON.stringify(this.outfits));
+            console.log('Data saved to localStorage as backup');
+        } catch (error) {
+            console.error('Error saving to localStorage:', error);
         }
     }
 
@@ -168,6 +302,21 @@ class LookbookApp {
             console.log('Found nav buttons:', navButtons.length);
             
             navButtons.forEach(btn => {
+                // Add touchstart for immediate mobile response
+                btn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const button = e.target.closest('.nav-btn');
+                    const action = button ? button.dataset.action : e.target.dataset.action;
+                    console.log('Navigation touched:', action);
+                    if (action) {
+                        // Add immediate visual feedback
+                        button.style.transform = 'scale(0.95)';
+                        button.style.opacity = '0.8';
+                        this.navigateTo(action);
+                    }
+                }, { passive: false });
+                
+                // Keep click for desktop and as fallback
                 btn.addEventListener('click', (e) => {
                     // Handle clicks on child elements (like spans)
                     const button = e.target.closest('.nav-btn');
@@ -179,6 +328,15 @@ class LookbookApp {
                         console.error('No action found for navigation button:', e.target);
                     }
                 });
+                
+                // Reset visual state on touchend
+                btn.addEventListener('touchend', (e) => {
+                    const button = e.target.closest('.nav-btn');
+                    if (button) {
+                        button.style.transform = '';
+                        button.style.opacity = '';
+                    }
+                });
             });
 
             // Back button events
@@ -186,6 +344,21 @@ class LookbookApp {
             console.log('Found back buttons:', backButtons.length);
             
             backButtons.forEach(btn => {
+                // Add touchstart for immediate mobile response
+                btn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const button = e.target.closest('.back-btn');
+                    const backTo = button ? button.dataset.back : e.target.dataset.back;
+                    console.log('Back button touched:', backTo);
+                    if (backTo) {
+                        // Add immediate visual feedback
+                        button.style.transform = 'scale(0.95)';
+                        button.style.opacity = '0.8';
+                        this.navigateTo(backTo);
+                    }
+                }, { passive: false });
+                
+                // Keep click for desktop and as fallback
                 btn.addEventListener('click', (e) => {
                     // Handle clicks on child elements (like spans)
                     const button = e.target.closest('.back-btn');
@@ -195,6 +368,15 @@ class LookbookApp {
                         this.navigateTo(backTo);
                     } else {
                         console.error('No back target found for back button:', e.target);
+                    }
+                });
+                
+                // Reset visual state on touchend
+                btn.addEventListener('touchend', (e) => {
+                    const button = e.target.closest('.back-btn');
+                    if (button) {
+                        button.style.transform = '';
+                        button.style.opacity = '';
                     }
                 });
             });
@@ -1509,10 +1691,24 @@ class LookbookApp {
             categoryElement.setAttribute('data-category-id', category.id);
             
             // Use touch-friendly event handling
+            categoryElement.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                // Add immediate visual feedback
+                categoryElement.style.transform = 'scale(0.95)';
+                categoryElement.style.opacity = '0.8';
+                this.showCategoryDetail(category);
+            }, { passive: false });
+            
             categoryElement.addEventListener('click', (e) => {
                 e.preventDefault();
                 this.showCategoryDetail(category);
             }, { passive: true });
+            
+            // Reset visual state on touchend
+            categoryElement.addEventListener('touchend', (e) => {
+                categoryElement.style.transform = '';
+                categoryElement.style.opacity = '';
+            });
             
             const outfitCount = outfitCounts[category.id] || 0;
             
@@ -1538,7 +1734,55 @@ class LookbookApp {
                 this.renderCategoriesBatch(categoriesList, endIndex);
             });
         } else {
+            // All categories rendered, now add the "Create New" card
+            this.addCreateNewCard(categoriesList);
             console.log('Categories rendered:', this.categories.length);
+        }
+    }
+    
+    addCreateNewCard(categoriesList) {
+        try {
+            // Check if "Create New" card already exists
+            const existingCreateCard = categoriesList.querySelector('.create-new-card');
+            if (existingCreateCard) {
+                return; // Already exists, don't add another
+            }
+            
+            const createCard = document.createElement('div');
+            createCard.className = 'category-card create-new-card';
+            
+            // Add touch-friendly event handling
+            createCard.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                // Add immediate visual feedback
+                createCard.style.transform = 'scale(0.95)';
+                createCard.style.opacity = '0.8';
+                this.navigateTo('create-category');
+            }, { passive: false });
+            
+            createCard.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.navigateTo('create-category');
+            }, { passive: true });
+            
+            // Reset visual state on touchend
+            createCard.addEventListener('touchend', (e) => {
+                createCard.style.transform = '';
+                createCard.style.opacity = '';
+            });
+            
+            createCard.innerHTML = `
+                <div class="category-icon create-icon">
+                    <span class="material-icons">add_circle_outline</span>
+                </div>
+                <h3>Create New</h3>
+                <div class="outfit-count">New Category</div>
+            `;
+            
+            categoriesList.appendChild(createCard);
+            console.log('Create New card added');
+        } catch (error) {
+            console.error('Error adding Create New card:', error);
         }
     }
     
@@ -1563,11 +1807,17 @@ class LookbookApp {
             categoryOutfits.innerHTML = '<div class="loading-spinner">Loading outfits...</div>';
             
             // Reload fresh data to ensure we have the latest outfits
-            this.loadData();
-            
-            // Use requestAnimationFrame for smooth rendering
-            requestAnimationFrame(() => {
-                this.renderCategoryOutfits(category, categoryOutfits);
+            this.loadData().then(() => {
+                // Use requestAnimationFrame for smooth rendering
+                requestAnimationFrame(() => {
+                    this.renderCategoryOutfits(category, categoryOutfits);
+                });
+            }).catch(error => {
+                console.error('Error loading data for category detail:', error);
+                // Still render with current data
+                requestAnimationFrame(() => {
+                    this.renderCategoryOutfits(category, categoryOutfits);
+                });
             });
             
             this.navigateTo('categoryDetail');
@@ -1750,12 +2000,33 @@ class LookbookApp {
         }
     }
 
-    saveData() {
+    async saveData() {
         try {
-            localStorage.setItem(this.getStorageKey('categories'), JSON.stringify(this.categories));
-            localStorage.setItem(this.getStorageKey('articles'), JSON.stringify(this.articles));
-            localStorage.setItem(this.getStorageKey('outfits'), JSON.stringify(this.outfits));
-            console.log('Data saved to localStorage');
+            // Always save to localStorage as backup
+            this.saveToLocalStorage();
+            
+            // Try to save to Firestore if user is signed in
+            if (this.user && this.db) {
+                console.log('Saving data to Firestore...');
+                
+                // Save all collections in parallel
+                const savePromises = [
+                    this.saveToFirestore('categories', this.categories),
+                    this.saveToFirestore('articles', this.articles),
+                    this.saveToFirestore('outfits', this.outfits)
+                ];
+                
+                const results = await Promise.allSettled(savePromises);
+                const successCount = results.filter(r => r.status === 'fulfilled' && r.value === true).length;
+                
+                if (successCount === 3) {
+                    console.log('All data saved to Firestore successfully');
+                } else {
+                    console.warn(`Only ${successCount}/3 collections saved to Firestore`);
+                }
+            } else {
+                console.log('Data saved to localStorage only (user not signed in or Firestore unavailable)');
+            }
         } catch (error) {
             console.error('Error saving data:', error);
         }
@@ -1778,6 +2049,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!firebase.apps || !firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
+        
+        // Initialize Firestore
+        window.app.initFirestore();
 
         // Auth state listener
         firebase.auth().onAuthStateChanged((user) => {
@@ -1793,10 +2067,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (user) {
                     window.app.migrateDataToUserNamespace(user.uid);
                 }
-                window.app.loadData();
-                window.app.renderCategories();
-                window.app.renderArticles();
-                window.app.updateCategorySelect();
+                
+                // Load data asynchronously and then render
+                window.app.loadData().then(() => {
+                    window.app.renderCategories();
+                    window.app.renderArticles();
+                    window.app.updateCategorySelect();
+                }).catch(error => {
+                    console.error('Error loading data after auth change:', error);
+                    // Still render with empty data
+                    window.app.renderCategories();
+                    window.app.renderArticles();
+                    window.app.updateCategorySelect();
+                });
             } catch (err) {
                 console.error('Error handling auth state change:', err);
             }

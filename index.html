@@ -27,18 +27,22 @@
 <body>
     <div id="app">
         <!-- Header -->
-        <header class="header">
-            <h1>Lookbook</h1>
-            <div>
-                <button id="authBtn" class="menu-btn mui-btn">
-                    <span class="material-icons">account_circle</span>
-                    <span>Sign in</span>
-                </button>
-                <button id="menuBtn" class="menu-btn mui-btn">
-                    <span class="material-icons">menu</span>
-                </button>
-            </div>
-        </header>
+                <header class="header">
+                    <h1>Lookbook</h1>
+                    <div class="header-controls">
+                        <div id="syncStatus" class="sync-status hidden">
+                            <span class="material-icons sync-icon">sync</span>
+                            <span class="sync-text">Syncing...</span>
+                        </div>
+                        <button id="authBtn" class="menu-btn mui-btn">
+                            <span class="material-icons">account_circle</span>
+                            <span>Sign in</span>
+                        </button>
+                        <button id="menuBtn" class="menu-btn mui-btn">
+                            <span class="material-icons">menu</span>
+                        </button>
+                    </div>
+                </header>
 
         <!-- Main Navigation -->
         <nav id="mainNav" class="main-nav">
@@ -304,9 +308,10 @@
         <p>Processing image...</p>
     </div>
 
-    <!-- Firebase (compat) - insert your config in app.js -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+        <!-- Firebase (compat) - insert your config in app.js -->
+        <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
