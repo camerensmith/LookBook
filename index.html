@@ -272,6 +272,21 @@
                     <input type="text" id="collectionName" placeholder="Collection Name" required>
                     <textarea id="collectionDescription" placeholder="Description (Optional)" rows="3"></textarea>
                     <input type="text" id="collectionTags" placeholder="Tags (comma-separated, optional)">
+                    
+                    <!-- Collection Icon Upload Section -->
+                    <div class="collection-icon-section">
+                        <label for="collectionIcon" class="icon-upload-label">
+                            <span class="material-icons">image</span>
+                            <span>Collection Icon (Optional)</span>
+                        </label>
+                        <input type="file" id="collectionIcon" accept="image/*" style="display: none;">
+                        <div id="collectionIconPreview" class="icon-preview hidden">
+                            <img id="collectionIconImg" src="" alt="Collection Icon">
+                            <button type="button" id="removeCollectionIcon" class="remove-icon-btn">
+                                <span class="material-icons">close</span>
+                            </button>
+                        </div>
+                    </div>
                     <div class="category-selection">
                         <h3>Add Categories (Optional)</h3>
                         <p class="help-text">You can add categories now or later by drilling into the collection.</p>
@@ -404,6 +419,15 @@
                 </div>
                 
                 <div class="editor-controls">
+                    <!-- Article Details Section -->
+                    <div class="tool-section">
+                        <h3>Article Details</h3>
+                        <div class="article-details-form">
+                            <input type="text" id="editorArticleName" placeholder="Article Name" required>
+                            <input type="text" id="editorArticleTags" placeholder="Tags (comma-separated)">
+                        </div>
+                    </div>
+                    
                     <div class="tool-section">
                         <h3>Background Tools</h3>
                         <div class="tool-buttons">

@@ -13,6 +13,7 @@ class LookbookApp {
         this.currentCollection = null;
         this.navigationHistory = [];
         this.selectedTags = [];
+        this.currentCollectionIcon = null;
         this.cameraStream = null;
         this.capturedImage = null;
         this.processedImage = null;
@@ -531,6 +532,9 @@ class LookbookApp {
             
             // Tag search events
             this.bindTagSearchEvents();
+            
+            // Collection icon events
+            this.bindCollectionIconEvents();
 
             const clearOutfitBtn = document.getElementById('clearOutfitBtn');
             if (clearOutfitBtn) {
@@ -1308,10 +1312,28 @@ class LookbookApp {
     }
 
     saveEditedImage() {
-        if (this.editingCanvas) {
-            this.processedImage = this.editingCanvas.toDataURL('image/png');
-            this.closeImageEditor();
-            this.showArticleForm();
+        try {
+            const nameInput = document.getElementById('editorArticleName');
+            const tagsInput = document.getElementById('editorArticleTags');
+            
+            if (!nameInput || !nameInput.value.trim()) {
+                this.showToast('Please enter an article name', 'error');
+                return;
+            }
+            
+            if (this.editingCanvas) {
+                this.processedImage = this.editingCanvas.toDataURL('image/png');
+                
+                // Store the article details temporarily
+                this.tempArticleName = nameInput.value.trim();
+                this.tempArticleTags = tagsInput ? tagsInput.value.trim() : '';
+                
+                this.closeImageEditor();
+                this.showArticleForm();
+            }
+        } catch (error) {
+            console.error('Error saving edited image:', error);
+            this.showToast('Error saving image. Please try again.', 'error');
         }
     }
 
@@ -1326,7 +1348,19 @@ class LookbookApp {
             const form = document.getElementById('articleForm');
             if (form) {
                 form.classList.remove('hidden');
-                console.log('Article form shown');
+                
+                // Populate form with saved details if available
+                const nameInput = document.getElementById('articleName');
+                const tagsInput = document.getElementById('articleTags');
+                
+                if (nameInput && this.tempArticleName) {
+                    nameInput.value = this.tempArticleName;
+                }
+                if (tagsInput && this.tempArticleTags) {
+                    tagsInput.value = this.tempArticleTags;
+                }
+                
+                console.log('Article form shown with pre-filled data');
             }
         } catch (error) {
             console.error('Error showing article form:', error);
@@ -1364,7 +1398,10 @@ class LookbookApp {
             this.articles.push(article);
             this.saveData();
             this.resetArticleForm();
-            this.navigateTo('categories');
+            
+            // Clear temporary article details
+            this.tempArticleName = null;
+            this.tempArticleTags = null;
             
             console.log('Article saved successfully:', article);
             this.showToast('Article saved successfully!');
@@ -1420,9 +1457,13 @@ class LookbookApp {
                 
                 // Check if article matches any of the selected tags
                 const matchesSelectedTags = this.selectedTags.length === 0 || 
-                    (article.tags && this.selectedTags.some(selectedTag => 
-                        article.tags.toLowerCase().includes(selectedTag.toLowerCase())
-                    ));
+                    (article.tags && this.selectedTags.some(selectedTag => {
+                        if (Array.isArray(article.tags)) {
+                            return article.tags.some(tag => tag.toLowerCase().includes(selectedTag.toLowerCase()));
+                        } else {
+                            return article.tags.toLowerCase().includes(selectedTag.toLowerCase());
+                        }
+                    }));
                 
                 return matchesSearch && matchesSelectedTags;
             });
@@ -1533,6 +1574,10 @@ class LookbookApp {
             
             // Add long press event listeners to document
             document.addEventListener('touchstart', (e) => {
+                // Skip long press on delete buttons and their children
+                if (e.target.closest('.delete-btn')) {
+                    return;
+                }
                 this.handleLongPressStart(e);
             }, { passive: true });
             
@@ -1825,10 +1870,14 @@ class LookbookApp {
                     .map(id => this.categories.find(c => c.id === id)?.name)
                     .filter(name => name);
                 
+                const iconHtml = collection.icon 
+                    ? `<img src="${collection.icon}" alt="${this.escapeHtml(collection.name)}" class="collection-custom-icon">`
+                    : `<span class="material-icons">collections</span>`;
+                
                 collectionCard.innerHTML = `
                     <div class="collection-header">
                         <div class="collection-icon">
-                            <span class="material-icons">collections</span>
+                            ${iconHtml}
                         </div>
                         <div class="collection-info">
                             <h3>${this.escapeHtml(collection.name)}</h3>
@@ -1932,6 +1981,7 @@ class LookbookApp {
                 name: name,
                 description: description,
                 tags: tags ? tags.split(',').map(t => t.trim()).filter(t => t) : [],
+                icon: this.currentCollectionIcon || null,
                 categoryIds: categoryIds,
                 createdAt: new Date().toISOString()
             };
@@ -1944,6 +1994,7 @@ class LookbookApp {
             descriptionInput.value = '';
             if (tagsInput) tagsInput.value = '';
             checkboxes.forEach(cb => cb.checked = false);
+            this.removeCollectionIcon();
             
             // Navigate back to collections
             this.navigateTo('collections');
@@ -3205,7 +3256,14 @@ class LookbookApp {
             const allTags = new Set();
             this.articles.forEach(article => {
                 if (article.tags) {
-                    const tags = article.tags.split(',').map(tag => tag.trim().toLowerCase());
+                    let tags = [];
+                    if (Array.isArray(article.tags)) {
+                        // Tags are stored as array
+                        tags = article.tags.map(tag => tag.trim().toLowerCase());
+                    } else if (typeof article.tags === 'string') {
+                        // Tags are stored as comma-separated string
+                        tags = article.tags.split(',').map(tag => tag.trim().toLowerCase());
+                    }
                     tags.forEach(tag => {
                         if (tag) allTags.add(tag);
                     });
@@ -3269,6 +3327,71 @@ class LookbookApp {
             }
         } catch (error) {
             console.error('Error updating selected tags display:', error);
+        }
+    }
+    
+    // Collection Icon Functionality
+    bindCollectionIconEvents() {
+        try {
+            const collectionIcon = document.getElementById('collectionIcon');
+            const removeCollectionIcon = document.getElementById('removeCollectionIcon');
+            
+            if (collectionIcon) {
+                collectionIcon.addEventListener('change', (e) => this.handleCollectionIconUpload(e));
+            }
+            
+            if (removeCollectionIcon) {
+                removeCollectionIcon.addEventListener('click', () => this.removeCollectionIcon());
+            }
+        } catch (error) {
+            console.error('Error binding collection icon events:', error);
+        }
+    }
+    
+    handleCollectionIconUpload(event) {
+        try {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.currentCollectionIcon = e.target.result;
+                    this.showCollectionIconPreview(e.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        } catch (error) {
+            console.error('Error handling collection icon upload:', error);
+        }
+    }
+    
+    showCollectionIconPreview(imageData) {
+        try {
+            const preview = document.getElementById('collectionIconPreview');
+            const img = document.getElementById('collectionIconImg');
+            
+            if (preview && img) {
+                img.src = imageData;
+                preview.classList.remove('hidden');
+            }
+        } catch (error) {
+            console.error('Error showing collection icon preview:', error);
+        }
+    }
+    
+    removeCollectionIcon() {
+        try {
+            this.currentCollectionIcon = null;
+            const preview = document.getElementById('collectionIconPreview');
+            const input = document.getElementById('collectionIcon');
+            
+            if (preview) {
+                preview.classList.add('hidden');
+            }
+            if (input) {
+                input.value = '';
+            }
+        } catch (error) {
+            console.error('Error removing collection icon:', error);
         }
     }
     
