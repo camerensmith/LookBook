@@ -2547,6 +2547,49 @@ class LookbookApp {
         }
     }
 
+    renderOutfitItems() {
+        try {
+            const canvas = document.getElementById('outfitCanvas');
+            if (!canvas) return;
+            
+            // Clear existing items
+            canvas.innerHTML = '';
+            
+            if (this.currentOutfitItems.length === 0) {
+                canvas.innerHTML = '<p class="placeholder-text">Drag articles here to build your outfit</p>';
+                return;
+            }
+            
+            // Render all current outfit items
+            this.currentOutfitItems.forEach(item => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'outfit-item';
+                itemElement.id = `outfit-item-${item.id}`;
+                itemElement.style.left = item.x + 'px';
+                itemElement.style.top = item.y + 'px';
+                
+                const imageSrc = item.image || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yMCAyMEg2MFY2MEgyMFYyMFoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+';
+                
+                itemElement.innerHTML = `
+                    <img src="${imageSrc}" alt="${this.escapeHtml(item.name)}" class="outfit-item-image">
+                    <div class="outfit-item-name">${this.escapeHtml(item.name)}</div>
+                    <button class="remove-item-btn" onclick="window.app.removeOutfitItem('${item.id}')">
+                        <span class="material-icons">close</span>
+                    </button>
+                `;
+                
+                // Make outfit items draggable
+                this.makeOutfitItemDraggable(itemElement, item);
+                
+                canvas.appendChild(itemElement);
+            });
+            
+            console.log('Outfit items rendered:', this.currentOutfitItems.length);
+        } catch (error) {
+            console.error('Error rendering outfit items:', error);
+        }
+    }
+    
     renderOutfitItem(outfitItem) {
         try {
             const canvas = document.getElementById('outfitCanvas');
@@ -2578,6 +2621,82 @@ class LookbookApp {
         }
     }
 
+    makeOutfitItemDraggable(element, outfitItem, mode = 'normal') {
+        let isDragging = false;
+        let startX, startY, startLeft, startTop;
+        
+        element.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.remove-item-btn') || e.target.closest('.remove-btn')) return;
+            
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            startLeft = parseInt(element.style.left) || 0;
+            startTop = parseInt(element.style.top) || 0;
+            
+            element.style.zIndex = '100';
+            element.style.cursor = 'grabbing';
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            
+            const deltaX = e.clientX - startX;
+            const deltaY = e.clientY - startY;
+            
+            element.style.left = (startLeft + deltaX) + 'px';
+            element.style.top = (startTop + deltaY) + 'px';
+            
+            // Update outfit item position
+            outfitItem.x = startLeft + deltaX;
+            outfitItem.y = startTop + deltaY;
+        });
+        
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                element.style.zIndex = '10';
+                element.style.cursor = 'grab';
+            }
+        });
+        
+        // Touch events for mobile
+        element.addEventListener('touchstart', (e) => {
+            if (e.target.closest('.remove-item-btn') || e.target.closest('.remove-btn')) return;
+            
+            isDragging = true;
+            const touch = e.touches[0];
+            startX = touch.clientX;
+            startY = touch.clientY;
+            startLeft = parseInt(element.style.left) || 0;
+            startTop = parseInt(element.style.top) || 0;
+            
+            element.style.zIndex = '100';
+        });
+        
+        document.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            
+            const touch = e.touches[0];
+            const deltaX = touch.clientX - startX;
+            const deltaY = touch.clientY - startY;
+            
+            element.style.left = (startLeft + deltaX) + 'px';
+            element.style.top = (startTop + deltaY) + 'px';
+            
+            outfitItem.x = startLeft + deltaX;
+            outfitItem.y = startTop + deltaY;
+        });
+        
+        document.addEventListener('touchend', () => {
+            if (isDragging) {
+                isDragging = false;
+                element.style.zIndex = '10';
+            }
+        });
+    }
+    
     makeDraggable(element, outfitItem) {
         let isDragging = false;
         let startX, startY, startLeft, startTop;
