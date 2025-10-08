@@ -2604,7 +2604,8 @@ class LookbookApp {
                     articleProcessedImage: item.article?.processedImage,
                     finalImageSrc: imageSrc.substring(0, 50) + '...',
                     isDataUrl: imageSrc.startsWith('data:'),
-                    isFallback: imageSrc.includes('PHN2ZyB3aWR0aD0iODAi')
+                    isFallback: imageSrc.includes('PHN2ZyB3aWR0aD0iODAi'),
+                    imageLength: imageSrc.length
                 });
                 
                 // Handle both data structures for name: item.name or item.article.name
@@ -4579,6 +4580,8 @@ class LookbookApp {
                 currentItems: this.currentOutfitItems.length 
             });
             
+            console.log('Full article object:', article);
+            
             // Check if article is already in the outfit
             const existingItem = this.currentOutfitItems.find(item => item.articleId === article.id);
             if (existingItem) {
@@ -4596,6 +4599,13 @@ class LookbookApp {
             };
             
             console.log('Created outfit item:', newItem);
+            console.log('Article image data:', {
+                hasProcessedImage: !!article.processedImage,
+                hasImage: !!article.image,
+                processedImageType: article.processedImage ? article.processedImage.substring(0, 50) + '...' : 'none',
+                imageType: article.image ? article.image.substring(0, 50) + '...' : 'none',
+                finalImage: newItem.image ? newItem.image.substring(0, 50) + '...' : 'none'
+            });
             
             if (mode === 'edit') {
                 this.editingOutfitItems.push(newItem);
