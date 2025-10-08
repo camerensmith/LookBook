@@ -174,12 +174,20 @@
                                 </div>
                             </div>
                     <div class="outfit-canvas">
-                        <h3>Your Outfit</h3>
+                        <div class="outfit-header">
+                            <h3>Your Outfit</h3>
+                            <div class="outfit-header-actions">
+                                <button id="addExistingOutfitsBtn" class="btn-secondary">
+                                    <span class="material-icons">add_box</span>
+                                    <span>+Add Outfit</span>
+                                </button>
+                                <button id="clearOutfitBtn" class="btn-secondary">Clear All</button>
+                            </div>
+                        </div>
                         <div id="outfitCanvas" class="outfit-canvas-area">
                             <p class="placeholder-text">Drag articles here to build your outfit</p>
                         </div>
                         <div class="outfit-controls">
-                            <button id="clearOutfitBtn" class="btn-secondary">Clear All</button>
                             <button id="saveOutfitBtn" class="btn-primary" disabled>Save Outfit</button>
                         </div>
                     </div>
@@ -332,27 +340,57 @@
         </div>
     </div>
 
-    <!-- Save Outfit Modal -->
-    <div id="saveOutfitModal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Save Outfit</h3>
-                <button id="closeSaveOutfitModal" class="close-btn">
-                    <span class="material-icons">close</span>
-                </button>
-            </div>
-            <form id="saveOutfitForm" class="form">
-                <input type="text" id="modalOutfitName" placeholder="Outfit Name" required>
-                <select id="modalOutfitCategory" required>
-                    <option value="">Select Category</option>
-                </select>
-                <div class="modal-actions">
-                    <button type="button" class="btn-secondary" onclick="window.app.closeSaveOutfitModal()">Cancel</button>
-                    <button type="submit" class="btn-primary">Save Outfit</button>
+            <!-- Save Outfit Modal -->
+            <div id="saveOutfitModal" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Save Outfit</h3>
+                        <button id="closeSaveOutfitModal" class="close-btn">
+                            <span class="material-icons">close</span>
+                        </button>
+                    </div>
+                    <form id="saveOutfitForm" class="form">
+                        <input type="text" id="modalOutfitName" placeholder="Outfit Name" required>
+                        <select id="modalOutfitCategory" required>
+                            <option value="">Select Category</option>
+                        </select>
+                        <div class="modal-actions">
+                            <button type="button" class="btn-secondary" onclick="window.app.closeSaveOutfitModal()">Cancel</button>
+                            <button type="submit" class="btn-primary">Save Outfit</button>
+                        </div>
+                    </form>
                 </div>
-            </form>
-        </div>
-    </div>
+            </div>
+
+            <!-- Select Outfits Modal -->
+            <div id="selectOutfitsModal" class="modal hidden">
+                <div class="modal-content select-outfits-modal">
+                    <div class="modal-header">
+                        <h3>Select Outfits</h3>
+                        <button id="closeSelectOutfitsModal" class="close-btn">
+                            <span class="material-icons">close</span>
+                        </button>
+                    </div>
+                    <div class="outfits-selection-container">
+                        <div class="outfits-selection-header">
+                            <div class="selection-info">
+                                <span id="selectedCount">0</span> outfits selected
+                            </div>
+                            <div class="selection-actions">
+                                <button id="selectAllBtn" class="btn-secondary">Select All</button>
+                                <button id="clearSelectionBtn" class="btn-secondary">Clear All</button>
+                            </div>
+                        </div>
+                        <div id="outfitsSelectionList" class="outfits-selection-list">
+                            <!-- Outfits will be populated here -->
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="window.app.closeSelectOutfitsModal()">Cancel</button>
+                        <button type="button" class="btn-primary" id="acceptSelectedOutfits">Accept</button>
+                    </div>
+                </div>
+            </div>
 
     <!-- Camera Modal -->
     <div id="cameraModal" class="modal hidden">

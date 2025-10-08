@@ -14,6 +14,7 @@ class LookbookApp {
         this.navigationHistory = [];
         this.selectedTags = [];
         this.currentCollectionIcon = null;
+        this.selectedOutfits = [];
         this.cameraStream = null;
         this.capturedImage = null;
         this.processedImage = null;
@@ -535,12 +536,23 @@ class LookbookApp {
             
             // Collection icon events
             this.bindCollectionIconEvents();
+            
+            // Outfit selection modal events
+            this.bindOutfitSelectionEvents();
 
             const clearOutfitBtn = document.getElementById('clearOutfitBtn');
             if (clearOutfitBtn) {
                 clearOutfitBtn.addEventListener('click', () => {
                     console.log('Clear outfit button clicked');
                     this.clearOutfit();
+                });
+            }
+
+            const addExistingOutfitsBtn = document.getElementById('addExistingOutfitsBtn');
+            if (addExistingOutfitsBtn) {
+                addExistingOutfitsBtn.addEventListener('click', () => {
+                    console.log('Add existing outfits button clicked');
+                    this.showSelectOutfitsModal();
                 });
             }
 
@@ -3392,6 +3404,237 @@ class LookbookApp {
             }
         } catch (error) {
             console.error('Error removing collection icon:', error);
+        }
+    }
+    
+    // Outfit Selection Modal Functionality
+    bindOutfitSelectionEvents() {
+        try {
+            const selectAllBtn = document.getElementById('selectAllBtn');
+            const clearSelectionBtn = document.getElementById('clearSelectionBtn');
+            const acceptSelectedOutfits = document.getElementById('acceptSelectedOutfits');
+            const closeSelectOutfitsModal = document.getElementById('closeSelectOutfitsModal');
+            
+            if (selectAllBtn) {
+                selectAllBtn.addEventListener('click', () => this.selectAllOutfits());
+            }
+            
+            if (clearSelectionBtn) {
+                clearSelectionBtn.addEventListener('click', () => this.clearOutfitSelection());
+            }
+            
+            if (acceptSelectedOutfits) {
+                acceptSelectedOutfits.addEventListener('click', () => this.acceptSelectedOutfits());
+            }
+            
+            if (closeSelectOutfitsModal) {
+                closeSelectOutfitsModal.addEventListener('click', () => this.closeSelectOutfitsModal());
+            }
+        } catch (error) {
+            console.error('Error binding outfit selection events:', error);
+        }
+    }
+    
+    showSelectOutfitsModal() {
+        try {
+            const modal = document.getElementById('selectOutfitsModal');
+            if (modal) {
+                this.selectedOutfits = [];
+                this.populateOutfitsSelection();
+                modal.classList.remove('hidden');
+                this.updateSelectedCount();
+            }
+        } catch (error) {
+            console.error('Error showing select outfits modal:', error);
+        }
+    }
+    
+    closeSelectOutfitsModal() {
+        try {
+            const modal = document.getElementById('selectOutfitsModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                this.selectedOutfits = [];
+            }
+        } catch (error) {
+            console.error('Error closing select outfits modal:', error);
+        }
+    }
+    
+    populateOutfitsSelection() {
+        try {
+            const outfitsList = document.getElementById('outfitsSelectionList');
+            if (!outfitsList) return;
+            
+            // Get all outfits from all categories
+            const allOutfits = [];
+            this.categories.forEach(category => {
+                if (category.outfits) {
+                    category.outfits.forEach(outfit => {
+                        allOutfits.push({
+                            ...outfit,
+                            categoryName: category.name,
+                            categoryId: category.id
+                        });
+                    });
+                }
+            });
+            
+            if (allOutfits.length === 0) {
+                outfitsList.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
+                        <div class="empty-icon">
+                            <span class="material-icons">checkroom</span>
+                        </div>
+                        <h3>No Outfits Available</h3>
+                        <p>Create some outfits first to select from them</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            outfitsList.innerHTML = '';
+            
+            allOutfits.forEach(outfit => {
+                const outfitCard = document.createElement('div');
+                outfitCard.className = 'outfit-selection-card';
+                outfitCard.dataset.outfitId = outfit.id;
+                
+                const previewImage = outfit.previewImage || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik04MCA0MEgxMjBWODBIODBWNDBaIiBmaWxsPSIjOTlBM0FGIi8+Cjwvc3ZnPg==';
+                
+                outfitCard.innerHTML = `
+                    <input type="checkbox" class="outfit-selection-checkbox" data-outfit-id="${outfit.id}">
+                    <img src="${previewImage}" alt="${this.escapeHtml(outfit.name)}" class="outfit-selection-preview">
+                    <div class="outfit-selection-name">${this.escapeHtml(outfit.name)}</div>
+                    <div class="outfit-selection-category">${this.escapeHtml(outfit.categoryName)}</div>
+                `;
+                
+                // Add click handler for card selection
+                outfitCard.addEventListener('click', (e) => {
+                    if (e.target.type !== 'checkbox') {
+                        const checkbox = outfitCard.querySelector('.outfit-selection-checkbox');
+                        checkbox.checked = !checkbox.checked;
+                        this.toggleOutfitSelection(outfit.id, checkbox.checked);
+                    }
+                });
+                
+                // Add change handler for checkbox
+                const checkbox = outfitCard.querySelector('.outfit-selection-checkbox');
+                checkbox.addEventListener('change', (e) => {
+                    this.toggleOutfitSelection(outfit.id, e.target.checked);
+                });
+                
+                outfitsList.appendChild(outfitCard);
+            });
+            
+            console.log('Outfits selection populated:', allOutfits.length);
+        } catch (error) {
+            console.error('Error populating outfits selection:', error);
+        }
+    }
+    
+    toggleOutfitSelection(outfitId, isSelected) {
+        try {
+            if (isSelected) {
+                if (!this.selectedOutfits.includes(outfitId)) {
+                    this.selectedOutfits.push(outfitId);
+                }
+            } else {
+                this.selectedOutfits = this.selectedOutfits.filter(id => id !== outfitId);
+            }
+            
+            this.updateSelectedCount();
+            this.updateCardSelection(outfitId, isSelected);
+        } catch (error) {
+            console.error('Error toggling outfit selection:', error);
+        }
+    }
+    
+    updateCardSelection(outfitId, isSelected) {
+        try {
+            const card = document.querySelector(`[data-outfit-id="${outfitId}"]`).closest('.outfit-selection-card');
+            if (card) {
+                if (isSelected) {
+                    card.classList.add('selected');
+                } else {
+                    card.classList.remove('selected');
+                }
+            }
+        } catch (error) {
+            console.error('Error updating card selection:', error);
+        }
+    }
+    
+    updateSelectedCount() {
+        try {
+            const countElement = document.getElementById('selectedCount');
+            if (countElement) {
+                countElement.textContent = this.selectedOutfits.length;
+            }
+        } catch (error) {
+            console.error('Error updating selected count:', error);
+        }
+    }
+    
+    selectAllOutfits() {
+        try {
+            const checkboxes = document.querySelectorAll('.outfit-selection-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = true;
+                const outfitId = checkbox.dataset.outfitId;
+                if (!this.selectedOutfits.includes(outfitId)) {
+                    this.selectedOutfits.push(outfitId);
+                }
+                this.updateCardSelection(outfitId, true);
+            });
+            this.updateSelectedCount();
+        } catch (error) {
+            console.error('Error selecting all outfits:', error);
+        }
+    }
+    
+    clearOutfitSelection() {
+        try {
+            const checkboxes = document.querySelectorAll('.outfit-selection-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+                const outfitId = checkbox.dataset.outfitId;
+                this.updateCardSelection(outfitId, false);
+            });
+            this.selectedOutfits = [];
+            this.updateSelectedCount();
+        } catch (error) {
+            console.error('Error clearing outfit selection:', error);
+        }
+    }
+    
+    acceptSelectedOutfits() {
+        try {
+            if (this.selectedOutfits.length === 0) {
+                this.showToast('Please select at least one outfit', 'error');
+                return;
+            }
+            
+            // Add selected outfits to current outfit items
+            this.selectedOutfits.forEach(outfitId => {
+                const outfit = this.findOutfitById(outfitId);
+                if (outfit) {
+                    // Add each item from the selected outfit
+                    outfit.items.forEach(item => {
+                        this.currentOutfitItems.push({
+                            ...item,
+                            id: Date.now().toString() + Math.random().toString(36).substr(2, 9) // Generate new ID
+                        });
+                    });
+                }
+            });
+            
+            this.closeSelectOutfitsModal();
+            this.renderOutfitItems();
+            this.showToast(`${this.selectedOutfits.length} outfit(s) added successfully!`);
+        } catch (error) {
+            console.error('Error accepting selected outfits:', error);
+            this.showToast('Error adding outfits. Please try again.', 'error');
         }
     }
     
