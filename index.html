@@ -16,6 +16,12 @@
     <script type="module" src="https://unpkg.com/@mui/material@latest/umd/material-ui.development.js"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    
+    <!-- Background Removal Package -->
+    <script type="module">
+        import { removeBackground } from 'https://cdn.skypack.dev/@imgly/background-removal';
+        window.removeBackground = removeBackground;
+    </script>
 </head>
 <body>
     <div id="app">
@@ -73,7 +79,17 @@
             <div id="addArticleView" class="view">
                 <h2>Add New Article</h2>
                 <div class="camera-section">
-                    <button id="cameraBtn" class="btn-primary camera-btn">📷 Take Photo</button>
+                    <div class="camera-options">
+                        <button id="cameraBtn" class="btn-primary camera-btn mui-btn">
+                            <span class="material-icons">camera_alt</span>
+                            <span>Take Photo</span>
+                        </button>
+                        <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                        <button id="uploadBtn" class="btn-secondary camera-btn mui-btn">
+                            <span class="material-icons">upload</span>
+                            <span>Upload Image</span>
+                        </button>
+                    </div>
                     <div id="cameraPreview" class="camera-preview hidden">
                         <img id="capturedImage" alt="Captured photo">
                         <div class="camera-controls">
@@ -193,6 +209,74 @@
                     <span class="material-icons">close</span>
                     <span>Close</span>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Preview & Edit Modal -->
+    <div id="imagePreviewModal" class="modal hidden">
+        <div class="modal-content image-editor-modal">
+            <div class="modal-header">
+                <h2 style="display: flex; align-items: center; gap: 8px;">
+                    <span class="material-icons">edit</span>
+                    Edit Image
+                </h2>
+                <button id="closePreviewBtn" class="close-btn mui-btn">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            
+            <div class="image-editor-container">
+                <div class="image-preview-area">
+                    <canvas id="imageCanvas" width="400" height="400"></canvas>
+                    <div class="canvas-overlay" id="canvasOverlay"></div>
+                </div>
+                
+                <div class="editor-controls">
+                    <div class="tool-section">
+                        <h3>Background Tools</h3>
+                        <div class="tool-buttons">
+                            <button id="autoRemoveBtn" class="tool-btn mui-btn">
+                                <span class="material-icons">auto_fix_high</span>
+                                <span>Auto Remove</span>
+                            </button>
+                            <button id="restoreBtn" class="tool-btn mui-btn">
+                                <span class="material-icons">restore</span>
+                                <span>Restore</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="tool-section">
+                        <h3>Manual Tools</h3>
+                        <div class="tool-buttons">
+                            <button id="brushBtn" class="tool-btn mui-btn active" data-tool="brush">
+                                <span class="material-icons">brush</span>
+                                <span>Brush</span>
+                            </button>
+                            <button id="eraserBtn" class="tool-btn mui-btn" data-tool="eraser">
+                                <span class="material-icons">content_cut</span>
+                                <span>Eraser</span>
+                            </button>
+                        </div>
+                        <div class="brush-controls">
+                            <label>Brush Size:</label>
+                            <input type="range" id="brushSize" min="5" max="50" value="20">
+                            <span id="brushSizeValue">20px</span>
+                        </div>
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button id="saveImageBtn" class="btn-primary mui-btn">
+                            <span class="material-icons">save</span>
+                            <span>Save Article</span>
+                        </button>
+                        <button id="cancelEditBtn" class="btn-secondary mui-btn">
+                            <span class="material-icons">cancel</span>
+                            <span>Cancel</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

@@ -13,6 +13,12 @@ class LookbookApp {
         this.capturedImage = null;
         this.processedImage = null;
         this.currentOutfitItems = [];
+        this.currentEditingImage = null;
+        this.editingCanvas = null;
+        this.editingContext = null;
+        this.currentTool = 'brush';
+        this.brushSize = 20;
+        this.isDrawing = false;
         
         console.log('LookbookApp initialized with:', {
             categories: this.categories.length,
@@ -254,6 +260,17 @@ class LookbookApp {
             // Initialize drag and drop
             this.initDragAndDrop();
 
+            // File upload events
+            const fileInput = document.getElementById('fileInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+            if (fileInput && uploadBtn) {
+                uploadBtn.addEventListener('click', () => fileInput.click());
+                fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
+            }
+
+            // Image editor events
+            this.initImageEditor();
+
             // Auth UI events
             const authBtn = document.getElementById('authBtn');
             if (authBtn) {
@@ -491,13 +508,9 @@ class LookbookApp {
             this.capturedImage = canvas.toDataURL('image/jpeg');
             this.closeCamera();
             
-            // Show preview
-            const capturedImg = document.getElementById('capturedImage');
-            if (capturedImg) {
-                capturedImg.src = this.capturedImage;
-                document.getElementById('cameraPreview').classList.remove('hidden');
-                console.log('Photo captured successfully');
-            }
+            // Open image editor instead of showing preview
+            this.openImageEditor(this.capturedImage);
+            console.log('Photo captured successfully');
         } catch (error) {
             console.error('Error capturing photo:', error);
         }
@@ -548,16 +561,229 @@ class LookbookApp {
     }
 
     async simulateBackgroundRemoval(imageData) {
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Use the @imgly background removal package
+        try {
+            console.log('Removing background with @imgly...');
+            const blob = await window.removeBackground(imageData);
+            return URL.createObjectURL(blob);
+        } catch (error) {
+            console.error('Background removal failed:', error);
+            // Fallback to original image
+            return imageData;
+        }
+    }
+
+    // Image Editor Methods
+    initImageEditor() {
+        this.editingCanvas = document.getElementById('imageCanvas');
+        this.editingContext = this.editingCanvas.getContext('2d');
         
-        // For demo purposes, return the original image
-        // In production, you would call a background removal API like:
-        // - Remove.bg API
-        // - Cloudinary Background Removal
-        // - Or use a client-side ML model
+        // Tool selection
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+                e.target.closest('.tool-btn').classList.add('active');
+                this.currentTool = e.target.closest('.tool-btn').dataset.tool;
+            });
+        });
+
+        // Brush size control
+        const brushSizeSlider = document.getElementById('brushSize');
+        const brushSizeValue = document.getElementById('brushSizeValue');
+        if (brushSizeSlider && brushSizeValue) {
+            brushSizeSlider.addEventListener('input', (e) => {
+                this.brushSize = parseInt(e.target.value);
+                brushSizeValue.textContent = this.brushSize + 'px';
+            });
+        }
+
+        // Canvas drawing events
+        this.editingCanvas.addEventListener('mousedown', (e) => this.startDrawing(e));
+        this.editingCanvas.addEventListener('mousemove', (e) => this.draw(e));
+        this.editingCanvas.addEventListener('mouseup', () => this.stopDrawing());
+        this.editingCanvas.addEventListener('mouseout', () => this.stopDrawing());
+
+        // Touch events for mobile
+        this.editingCanvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            this.editingCanvas.dispatchEvent(mouseEvent);
+        });
+
+        this.editingCanvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            this.editingCanvas.dispatchEvent(mouseEvent);
+        });
+
+        this.editingCanvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            const mouseEvent = new MouseEvent('mouseup', {});
+            this.editingCanvas.dispatchEvent(mouseEvent);
+        });
+
+        // Editor action buttons
+        const autoRemoveBtn = document.getElementById('autoRemoveBtn');
+        const restoreBtn = document.getElementById('restoreBtn');
+        const saveImageBtn = document.getElementById('saveImageBtn');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const closePreviewBtn = document.getElementById('closePreviewBtn');
+
+        if (autoRemoveBtn) {
+            autoRemoveBtn.addEventListener('click', () => this.autoRemoveBackground());
+        }
+        if (restoreBtn) {
+            restoreBtn.addEventListener('click', () => this.restoreOriginalImage());
+        }
+        if (saveImageBtn) {
+            saveImageBtn.addEventListener('click', () => this.saveEditedImage());
+        }
+        if (cancelEditBtn) {
+            cancelEditBtn.addEventListener('click', () => this.closeImageEditor());
+        }
+        if (closePreviewBtn) {
+            closePreviewBtn.addEventListener('click', () => this.closeImageEditor());
+        }
+    }
+
+    handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                this.openImageEditor(e.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    openImageEditor(imageData) {
+        this.currentEditingImage = imageData;
+        this.originalImage = imageData;
         
-        return imageData;
+        // Load image into canvas
+        const img = new Image();
+        img.onload = () => {
+            const canvas = this.editingCanvas;
+            const ctx = this.editingContext;
+            
+            // Calculate dimensions to fit canvas while maintaining aspect ratio
+            const maxWidth = canvas.width - 20;
+            const maxHeight = canvas.height - 20;
+            let { width, height } = img;
+            
+            if (width > maxWidth || height > maxHeight) {
+                const ratio = Math.min(maxWidth / width, maxHeight / height);
+                width *= ratio;
+                height *= ratio;
+            }
+            
+            // Center the image
+            const x = (canvas.width - width) / 2;
+            const y = (canvas.height - height) / 2;
+            
+            canvas.width = canvas.width; // Clear canvas
+            ctx.drawImage(img, x, y, width, height);
+            
+            // Store image bounds for drawing calculations
+            this.imageBounds = { x, y, width, height };
+        };
+        img.src = imageData;
+        
+        // Show the editor modal
+        document.getElementById('imagePreviewModal').classList.remove('hidden');
+    }
+
+    startDrawing(e) {
+        this.isDrawing = true;
+        this.draw(e);
+    }
+
+    draw(e) {
+        if (!this.isDrawing) return;
+        
+        const rect = this.editingCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        const ctx = this.editingContext;
+        ctx.globalCompositeOperation = this.currentTool === 'eraser' ? 'destination-out' : 'source-over';
+        ctx.lineWidth = this.brushSize;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        if (this.currentTool === 'brush') {
+            ctx.globalAlpha = 0.5;
+            ctx.strokeStyle = '#000';
+        } else {
+            ctx.globalAlpha = 1;
+        }
+        
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    }
+
+    stopDrawing() {
+        if (this.isDrawing) {
+            this.isDrawing = false;
+            this.editingContext.beginPath();
+        }
+    }
+
+    async autoRemoveBackground() {
+        if (!this.currentEditingImage) return;
+        
+        try {
+            this.showLoading(true);
+            const processedImage = await this.simulateBackgroundRemoval(this.currentEditingImage);
+            
+            // Load processed image
+            const img = new Image();
+            img.onload = () => {
+                const canvas = this.editingCanvas;
+                const ctx = this.editingContext;
+                
+                canvas.width = canvas.width; // Clear canvas
+                ctx.drawImage(img, this.imageBounds.x, this.imageBounds.y, this.imageBounds.width, this.imageBounds.height);
+            };
+            img.src = processedImage;
+            
+        } catch (error) {
+            console.error('Auto background removal failed:', error);
+            alert('Background removal failed. Please try again.');
+        } finally {
+            this.showLoading(false);
+        }
+    }
+
+    restoreOriginalImage() {
+        if (this.originalImage) {
+            this.openImageEditor(this.originalImage);
+        }
+    }
+
+    saveEditedImage() {
+        if (this.editingCanvas) {
+            this.processedImage = this.editingCanvas.toDataURL('image/png');
+            this.closeImageEditor();
+            this.showArticleForm();
+        }
+    }
+
+    closeImageEditor() {
+        document.getElementById('imagePreviewModal').classList.add('hidden');
+        this.currentEditingImage = null;
+        this.originalImage = null;
     }
 
     showArticleForm() {

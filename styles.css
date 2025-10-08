@@ -657,6 +657,174 @@ body {
     color: #1976d2;
 }
 
+/* Image Editor Modal */
+.image-editor-modal {
+    max-width: 90vw;
+    max-height: 90vh;
+    width: 1000px;
+    padding: 0;
+    overflow: hidden;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e0e0e0;
+    background: #fafafa;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: #666;
+    padding: 8px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.close-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.image-editor-container {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    height: 600px;
+}
+
+.image-preview-area {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f5f5f5;
+    border-right: 1px solid #e0e0e0;
+}
+
+#imageCanvas {
+    max-width: 100%;
+    max-height: 100%;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    cursor: crosshair;
+}
+
+.canvas-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    border-radius: 8px;
+}
+
+.editor-controls {
+    padding: 1.5rem;
+    background: white;
+    overflow-y: auto;
+}
+
+.tool-section {
+    margin-bottom: 2rem;
+}
+
+.tool-section h3 {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+}
+
+.tool-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.tool-btn {
+    flex: 1;
+    padding: 12px 16px;
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.tool-btn.active {
+    background: #1976d2;
+    color: white;
+    border-color: #1976d2;
+}
+
+.tool-btn:hover {
+    background: #e3f2fd;
+    border-color: #1976d2;
+}
+
+.tool-btn.active:hover {
+    background: #1565c0;
+}
+
+.brush-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.brush-controls label {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.brush-controls input[type="range"] {
+    flex: 1;
+}
+
+.brush-controls span {
+    font-size: 0.9rem;
+    color: #666;
+    min-width: 40px;
+}
+
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.camera-options {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.camera-options .camera-btn {
+    flex: 1;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .image-editor-container {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+    
+    .image-editor-modal {
+        max-width: 95vw;
+        max-height: 95vh;
+    }
+    
+    .editor-controls {
+        max-height: 300px;
+    }
+}
+
 /* iOS-specific optimizations */
 @supports (-webkit-touch-callout: none) {
     body {
