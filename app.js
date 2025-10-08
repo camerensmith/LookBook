@@ -2505,7 +2505,12 @@ class LookbookApp {
                 
                 // Add article to outfit
                 const articleId = this.draggedElement.dataset.articleId;
-                this.addArticleToOutfit(articleId, x, y);
+                const article = this.articles.find(a => a.id === articleId);
+                if (article) {
+                    this.addArticleToOutfit(article, 'normal');
+                } else {
+                    console.warn('Article not found for ID:', articleId);
+                }
             }
             
             // Clean up
