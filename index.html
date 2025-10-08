@@ -10,6 +10,7 @@
     <meta name="theme-color" content="#6366f1">
     <title>Lookbook - Alice's Personal Style Manager</title>
     <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
     <link rel="stylesheet" href="styles.css">
     
@@ -83,6 +84,7 @@
                 <h2>Create New Category</h2>
                 <form id="categoryForm" class="form">
                     <input type="text" id="categoryName" placeholder="Category Name (e.g., Office, Work, School)" required>
+                    <input type="text" id="categoryTags" placeholder="Tags (comma-separated, optional)">
                     
                     <!-- Category Icon Upload Section -->
                     <div class="category-icon-section">
@@ -149,9 +151,16 @@
                             <div class="article-selector">
                                 <div class="search-section">
                                     <input type="text" id="searchArticles" placeholder="Search articles by name or tags...">
-                                    <div class="tag-filters">
-                                        <button class="tag-filter-btn active" data-tag="all">All</button>
-                                        <!-- Tag filter buttons will be populated here -->
+                                    <div class="tag-search-container">
+                                        <div class="tag-search-input" id="tagSearchInput">
+                                            <span class="tag-search-placeholder">Select tags to filter...</span>
+                                            <span class="tag-search-arrow">▼</span>
+                                        </div>
+                                        <div class="tag-search-dropdown hidden" id="tagSearchDropdown">
+                                            <div class="tag-search-options" id="tagSearchOptions">
+                                                <!-- Tag options will be populated here -->
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div id="articlesList" class="articles-list">
@@ -192,9 +201,13 @@
             <div id="categoryDetailView" class="view">
                 <h2 id="categoryDetailTitle">Category</h2>
                 <div class="category-actions">
-                    <button class="btn-primary" onclick="window.app.navigateTo('add-article')">
+                    <button class="btn-primary" onclick="window.app.navigateTo('add-outfit')">
                         <span class="material-icons">add</span>
-                        <span>Add Article</span>
+                        <span>Add Outfit</span>
+                    </button>
+                    <button class="delete-btn" onclick="window.app.deleteCategory(window.app.currentCategory.id)">
+                        <span class="material-icons">delete</span>
+                        <span>Delete Category</span>
                     </button>
                 </div>
                 <div id="categoryOutfits" class="category-outfits">
@@ -252,6 +265,7 @@
                 <form id="collectionForm" class="form">
                     <input type="text" id="collectionName" placeholder="Collection Name" required>
                     <textarea id="collectionDescription" placeholder="Description (Optional)" rows="3"></textarea>
+                    <input type="text" id="collectionTags" placeholder="Tags (comma-separated, optional)">
                     <div class="category-selection">
                         <h3>Add Categories (Optional)</h3>
                         <p class="help-text">You can add categories now or later by drilling into the collection.</p>
@@ -275,6 +289,10 @@
                     <button class="btn-secondary" onclick="window.app.editCollection()">
                         <span class="material-icons">edit</span>
                         <span>Edit Collection</span>
+                    </button>
+                    <button class="delete-btn" onclick="window.app.deleteCollection(window.app.currentCollection.id)">
+                        <span class="material-icons">delete</span>
+                        <span>Delete Collection</span>
                     </button>
                 </div>
                 <div id="collectionCategories" class="collection-categories-list">
@@ -304,8 +322,8 @@
             </div>
             <form id="saveOutfitForm" class="form">
                 <input type="text" id="modalOutfitName" placeholder="Outfit Name" required>
-                <select id="modalOutfitCategory">
-                    <option value="">Select Category (Optional)</option>
+                <select id="modalOutfitCategory" required>
+                    <option value="">Select Category</option>
                 </select>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary" onclick="window.app.closeSaveOutfitModal()">Cancel</button>

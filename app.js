@@ -11,6 +11,8 @@ class LookbookApp {
         this.currentCategory = null;
         this.currentOutfit = null;
         this.currentCollection = null;
+        this.navigationHistory = [];
+        this.selectedTags = [];
         this.cameraStream = null;
         this.capturedImage = null;
         this.processedImage = null;
@@ -372,7 +374,7 @@ class LookbookApp {
                         // Add immediate visual feedback
                         button.style.transform = 'scale(0.95)';
                         button.style.opacity = '0.8';
-                        this.navigateTo(backTo);
+                        this.navigateBack();
                     }
                 }, { passive: false });
                 
@@ -383,7 +385,8 @@ class LookbookApp {
                     const backTo = button ? button.dataset.back : e.target.dataset.back;
                     console.log('Back button clicked:', backTo);
                     if (backTo) {
-                        this.navigateTo(backTo);
+                        // Use smart back navigation for better UX
+                        this.navigateBack();
                     } else {
                         console.error('No back target found for back button:', e.target);
                     }
@@ -525,6 +528,9 @@ class LookbookApp {
             
             // Save outfit modal events
             this.bindSaveOutfitModalEvents();
+            
+            // Tag search events
+            this.bindTagSearchEvents();
 
             const clearOutfitBtn = document.getElementById('clearOutfitBtn');
             if (clearOutfitBtn) {
@@ -702,12 +708,24 @@ class LookbookApp {
                     'category': 'categoryDetail',
                     'categoryDetail': 'categoryDetail',
                     'outfit': 'outfitDetail',
-                    'outfitDetail': 'outfitDetail'
+                    'outfitDetail': 'outfitDetail',
+                    'collections': 'collections',
+                    'collectionDetail': 'collectionDetail'
                 };
                 return map[key] || key;
             };
 
             const normalized = mapViewKey(view);
+            
+            // Add current view to history before navigating (except for back navigation)
+            if (this.currentView && this.currentView !== normalized && !view.startsWith('back-')) {
+                this.navigationHistory.push({
+                    view: this.currentView,
+                    category: this.currentCategory,
+                    collection: this.currentCollection
+                });
+                console.log('Added to navigation history:', this.currentView);
+            }
             
             // Hide all views
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -760,28 +778,60 @@ class LookbookApp {
             console.error('Error navigating to view:', error);
         }
     }
+    
+    // Handle back navigation with history
+    navigateBack() {
+        try {
+            if (this.navigationHistory.length > 0) {
+                const previousState = this.navigationHistory.pop();
+                console.log('Navigating back to:', previousState);
+                
+                // Restore previous state
+                if (previousState.category) {
+                    this.currentCategory = previousState.category;
+                }
+                if (previousState.collection) {
+                    this.currentCollection = previousState.collection;
+                }
+                
+                // Navigate to previous view
+                this.navigateTo(previousState.view);
+            } else {
+                // Fallback to categories if no history
+                this.navigateTo('categories');
+            }
+        } catch (error) {
+            console.error('Error navigating back:', error);
+            this.navigateTo('categories');
+        }
+    }
 
     // Category Management
     createCategory() {
         try {
             const nameInput = document.getElementById('categoryName');
+            const tagsInput = document.getElementById('categoryTags');
+            
             if (!nameInput) {
                 console.error('Category name input not found');
                 return;
             }
             
             const name = nameInput.value.trim();
+            const tags = tagsInput ? tagsInput.value.trim() : '';
             console.log('Creating category:', name);
             
             if (!name) {
-                alert('Please enter a category name');
+                this.showToast('Please enter a category name', 'error');
                 return;
             }
 
             const category = {
                 id: Date.now().toString(),
                 name: name,
+                tags: tags ? tags.split(',').map(t => t.trim()).filter(t => t) : [],
                 icon: this.currentCategoryIcon || null, // Add icon if uploaded
+                outfits: [],
                 createdAt: new Date().toISOString()
             };
 
@@ -792,13 +842,14 @@ class LookbookApp {
             
             // Reset form
             nameInput.value = '';
+            if (tagsInput) tagsInput.value = '';
             this.removeCategoryIcon();
             
             console.log('Category created successfully:', category);
-            alert('Category created successfully!');
+            this.showToast('Category created successfully!');
         } catch (error) {
             console.error('Error creating category:', error);
-            alert('Error creating category. Please try again.');
+            this.showToast('Error creating category. Please try again.', 'error');
         }
     }
 
@@ -1222,23 +1273,11 @@ class LookbookApp {
                 return;
             }
 
-            // Create a default category if none exist
-            if (this.categories.length === 0) {
-                const defaultCategory = {
-                    id: 'default-' + Date.now(),
-                    name: 'My Articles',
-                    createdAt: new Date().toISOString()
-                };
-                this.categories.push(defaultCategory);
-                console.log('Created default category:', defaultCategory);
-            }
-
             const article = {
                 id: Date.now().toString(),
                 name: name,
                 tags: tags ? tags.split(',').map(t => t.trim()) : [],
                 image: this.processedImage,
-                categoryId: this.categories[0].id, // Assign to first category
                 createdAt: new Date().toISOString()
             };
 
@@ -1299,10 +1338,13 @@ class LookbookApp {
                     article.name.toLowerCase().includes(searchTerm) ||
                     (article.tags && article.tags.toLowerCase().includes(searchTerm));
                 
-                const matchesTag = selectedTag === 'all' || 
-                    (article.tags && article.tags.toLowerCase().includes(selectedTag));
+                // Check if article matches any of the selected tags
+                const matchesSelectedTags = this.selectedTags.length === 0 || 
+                    (article.tags && this.selectedTags.some(selectedTag => 
+                        article.tags.toLowerCase().includes(selectedTag.toLowerCase())
+                    ));
                 
-                return matchesSearch && matchesTag;
+                return matchesSearch && matchesSelectedTags;
             });
             
             articlesList.innerHTML = '';
@@ -1581,28 +1623,87 @@ class LookbookApp {
     
     deleteArticle(articleId) {
         try {
-            this.articles = this.articles.filter(a => a.id !== articleId);
-            this.saveData();
-            this.renderArticles();
-            this.renderArticlesGrid();
-            this.populateTagFilters();
+            const article = this.articles.find(a => a.id === articleId);
+            if (!article) {
+                this.showToast('Article not found', 'error');
+                return;
+            }
             
-            console.log('Article deleted:', articleId);
+            this.showDeleteConfirmation(
+                'article',
+                article.name,
+                () => {
+                    this.articles = this.articles.filter(a => a.id !== articleId);
+                    this.saveData();
+                    this.renderArticles();
+                    this.renderArticlesGrid();
+                    this.populateTagFilters();
+                    this.showToast('Article deleted successfully!');
+                }
+            );
         } catch (error) {
             console.error('Error deleting article:', error);
+            this.showToast('Error deleting article. Please try again.', 'error');
         }
     }
     
     deleteCategory(categoryId) {
         try {
-            this.categories = this.categories.filter(c => c.id !== categoryId);
-            this.saveData();
-            this.renderCategories();
-            this.updateCategorySelect();
+            const category = this.categories.find(c => c.id === categoryId);
+            if (!category) {
+                this.showToast('Category not found', 'error');
+                return;
+            }
             
-            console.log('Category deleted:', categoryId);
+            // Check if category has outfits
+            if (category.outfits && category.outfits.length > 0) {
+                this.showDeleteConfirmation(
+                    'category',
+                    category.name,
+                    () => {
+                        this.categories = this.categories.filter(c => c.id !== categoryId);
+                        this.saveData();
+                        this.renderCategories();
+                        this.updateCategorySelect();
+                        this.navigateTo('categories');
+                        this.showToast('Category deleted successfully!');
+                    }
+                );
+            } else {
+                this.categories = this.categories.filter(c => c.id !== categoryId);
+                this.saveData();
+                this.renderCategories();
+                this.updateCategorySelect();
+                this.navigateTo('categories');
+                this.showToast('Category deleted successfully!');
+            }
         } catch (error) {
             console.error('Error deleting category:', error);
+            this.showToast('Error deleting category. Please try again.', 'error');
+        }
+    }
+    
+    deleteCollection(collectionId) {
+        try {
+            const collection = this.collections.find(c => c.id === collectionId);
+            if (!collection) {
+                this.showToast('Collection not found', 'error');
+                return;
+            }
+            
+            this.showDeleteConfirmation(
+                'collection',
+                collection.name,
+                () => {
+                    this.collections = this.collections.filter(c => c.id !== collectionId);
+                    this.saveData();
+                    this.navigateTo('collections');
+                    this.showToast('Collection deleted successfully!');
+                }
+            );
+        } catch (error) {
+            console.error('Error deleting collection:', error);
+            this.showToast('Error deleting collection. Please try again.', 'error');
         }
     }
     
@@ -1726,6 +1827,7 @@ class LookbookApp {
         try {
             const nameInput = document.getElementById('collectionName');
             const descriptionInput = document.getElementById('collectionDescription');
+            const tagsInput = document.getElementById('collectionTags');
             const checkboxes = document.querySelectorAll('#categoryCheckboxes input[type="checkbox"]:checked');
             
             if (!nameInput || !descriptionInput) {
@@ -1735,6 +1837,7 @@ class LookbookApp {
             
             const name = nameInput.value.trim();
             const description = descriptionInput.value.trim();
+            const tags = tagsInput ? tagsInput.value.trim() : '';
             const categoryIds = Array.from(checkboxes).map(cb => cb.value);
             
             if (!name) {
@@ -1748,6 +1851,7 @@ class LookbookApp {
                 id: Date.now().toString(),
                 name: name,
                 description: description,
+                tags: tags ? tags.split(',').map(t => t.trim()).filter(t => t) : [],
                 categoryIds: categoryIds,
                 createdAt: new Date().toISOString()
             };
@@ -1758,6 +1862,7 @@ class LookbookApp {
             // Reset form
             nameInput.value = '';
             descriptionInput.value = '';
+            if (tagsInput) tagsInput.value = '';
             checkboxes.forEach(cb => cb.checked = false);
             
             // Navigate back to collections
@@ -2753,6 +2858,10 @@ class LookbookApp {
                     <img src="${imageSrc}" alt="${this.escapeHtml(article.name)}" class="article-image">
                     <div class="article-name">${this.escapeHtml(article.name)}</div>
                     <div class="article-tags">${this.escapeHtml(article.tags || '')}</div>
+                    <button class="delete-btn" onclick="window.app.deleteArticle('${article.id}')">
+                        <span class="material-icons">delete</span>
+                        <span>Delete</span>
+                    </button>
                 `;
                 
                 articlesGrid.appendChild(articleCard);
@@ -2877,6 +2986,11 @@ class LookbookApp {
                 return;
             }
             
+            if (this.categories.length === 0) {
+                this.showToast('Please create a category first to organize your outfits!', 'info');
+                return;
+            }
+            
             const modal = document.getElementById('saveOutfitModal');
             const nameInput = document.getElementById('modalOutfitName');
             const categorySelect = document.getElementById('modalOutfitCategory');
@@ -2919,7 +3033,7 @@ class LookbookApp {
             if (!categorySelect) return;
             
             // Clear existing options except the first one
-            categorySelect.innerHTML = '<option value="">Select Category (Optional)</option>';
+            categorySelect.innerHTML = '<option value="">Select Category</option>';
             
             this.categories.forEach(category => {
                 const option = document.createElement('option');
@@ -2929,6 +3043,155 @@ class LookbookApp {
             });
         } catch (error) {
             console.error('Error updating modal category select:', error);
+        }
+    }
+    
+    // Tag Search Functionality
+    bindTagSearchEvents() {
+        try {
+            const tagSearchInput = document.getElementById('tagSearchInput');
+            const tagSearchDropdown = document.getElementById('tagSearchDropdown');
+            
+            if (tagSearchInput && tagSearchDropdown) {
+                tagSearchInput.addEventListener('click', () => {
+                    this.toggleTagSearchDropdown();
+                });
+                
+                // Close dropdown when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!tagSearchInput.contains(e.target) && !tagSearchDropdown.contains(e.target)) {
+                        this.closeTagSearchDropdown();
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error binding tag search events:', error);
+        }
+    }
+    
+    toggleTagSearchDropdown() {
+        try {
+            const tagSearchInput = document.getElementById('tagSearchInput');
+            const tagSearchDropdown = document.getElementById('tagSearchDropdown');
+            
+            if (tagSearchInput && tagSearchDropdown) {
+                if (tagSearchDropdown.classList.contains('hidden')) {
+                    this.openTagSearchDropdown();
+                } else {
+                    this.closeTagSearchDropdown();
+                }
+            }
+        } catch (error) {
+            console.error('Error toggling tag search dropdown:', error);
+        }
+    }
+    
+    openTagSearchDropdown() {
+        try {
+            const tagSearchInput = document.getElementById('tagSearchInput');
+            const tagSearchDropdown = document.getElementById('tagSearchDropdown');
+            const tagSearchOptions = document.getElementById('tagSearchOptions');
+            
+            if (tagSearchInput && tagSearchDropdown && tagSearchOptions) {
+                // Populate tag options
+                this.populateTagSearchOptions();
+                
+                // Show dropdown
+                tagSearchInput.classList.add('active');
+                tagSearchDropdown.classList.remove('hidden');
+            }
+        } catch (error) {
+            console.error('Error opening tag search dropdown:', error);
+        }
+    }
+    
+    closeTagSearchDropdown() {
+        try {
+            const tagSearchInput = document.getElementById('tagSearchInput');
+            const tagSearchDropdown = document.getElementById('tagSearchDropdown');
+            
+            if (tagSearchInput && tagSearchDropdown) {
+                tagSearchInput.classList.remove('active');
+                tagSearchDropdown.classList.add('hidden');
+            }
+        } catch (error) {
+            console.error('Error closing tag search dropdown:', error);
+        }
+    }
+    
+    populateTagSearchOptions() {
+        try {
+            const tagSearchOptions = document.getElementById('tagSearchOptions');
+            if (!tagSearchOptions) return;
+            
+            // Get all unique tags from articles
+            const allTags = new Set();
+            this.articles.forEach(article => {
+                if (article.tags) {
+                    const tags = article.tags.split(',').map(tag => tag.trim().toLowerCase());
+                    tags.forEach(tag => {
+                        if (tag) allTags.add(tag);
+                    });
+                }
+            });
+            
+            tagSearchOptions.innerHTML = '';
+            
+            if (allTags.size === 0) {
+                tagSearchOptions.innerHTML = '<div class="tag-search-option">No tags available</div>';
+                return;
+            }
+            
+            Array.from(allTags).sort().forEach(tag => {
+                const option = document.createElement('div');
+                option.className = 'tag-search-option';
+                
+                const isSelected = this.selectedTags.includes(tag);
+                
+                option.innerHTML = `
+                    <input type="checkbox" id="tag-${tag}" value="${tag}" ${isSelected ? 'checked' : ''}>
+                    <label for="tag-${tag}">${tag}</label>
+                `;
+                
+                const checkbox = option.querySelector('input[type="checkbox"]');
+                checkbox.addEventListener('change', () => {
+                    this.toggleTagSelection(tag);
+                });
+                
+                tagSearchOptions.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error populating tag search options:', error);
+        }
+    }
+    
+    toggleTagSelection(tag) {
+        try {
+            if (this.selectedTags.includes(tag)) {
+                this.selectedTags = this.selectedTags.filter(t => t !== tag);
+            } else {
+                this.selectedTags.push(tag);
+            }
+            
+            this.updateSelectedTagsDisplay();
+            this.renderArticles(); // Re-render with new filter
+        } catch (error) {
+            console.error('Error toggling tag selection:', error);
+        }
+    }
+    
+    updateSelectedTagsDisplay() {
+        try {
+            const tagSearchInput = document.getElementById('tagSearchInput');
+            const placeholder = tagSearchInput.querySelector('.tag-search-placeholder');
+            
+            if (this.selectedTags.length === 0) {
+                placeholder.textContent = 'Select tags to filter...';
+            } else {
+                placeholder.textContent = `${this.selectedTags.length} tag(s) selected`;
+            }
+        } catch (error) {
+            console.error('Error updating selected tags display:', error);
         }
     }
     
@@ -2950,6 +3213,11 @@ class LookbookApp {
                 return;
             }
             
+            if (!categoryId) {
+                this.showToast('Please select a category for your outfit', 'error');
+                return;
+            }
+            
             if (this.currentOutfitItems.length === 0) {
                 this.showToast('Please add some articles to your outfit first!', 'error');
                 return;
@@ -2968,25 +3236,14 @@ class LookbookApp {
             const previewImage = await this.generateOutfitPreview();
             outfit.previewImage = previewImage;
             
-            // Save outfit to category
-            if (categoryId) {
-                const category = this.categories.find(c => c.id === categoryId);
-                if (category) {
-                    if (!category.outfits) category.outfits = [];
-                    category.outfits.push(outfit);
-                }
+            // Save outfit to selected category
+            const category = this.categories.find(c => c.id === categoryId);
+            if (category) {
+                if (!category.outfits) category.outfits = [];
+                category.outfits.push(outfit);
             } else {
-                // Save to a default "Uncategorized" category
-                let uncategorizedCategory = this.categories.find(c => c.name === 'Uncategorized');
-                if (!uncategorizedCategory) {
-                    uncategorizedCategory = {
-                        id: Date.now().toString(),
-                        name: 'Uncategorized',
-                        outfits: []
-                    };
-                    this.categories.push(uncategorizedCategory);
-                }
-                uncategorizedCategory.outfits.push(outfit);
+                this.showToast('Selected category not found', 'error');
+                return;
             }
             
             // Save data and clear outfit

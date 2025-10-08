@@ -701,6 +701,163 @@ body {
     min-width: 100px;
 }
 
+/* Tag Search Multiselect */
+.tag-search-container {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.tag-search-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: border-color 0.2s ease;
+}
+
+.tag-search-input:hover {
+    border-color: #6366f1;
+}
+
+.tag-search-input.active {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.tag-search-placeholder {
+    color: #9ca3af;
+    font-size: 1rem;
+}
+
+.tag-search-arrow {
+    color: #6b7280;
+    font-size: 0.8rem;
+    transition: transform 0.2s ease;
+}
+
+.tag-search-input.active .tag-search-arrow {
+    transform: rotate(180deg);
+}
+
+.tag-search-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.tag-search-options {
+    padding: 0.5rem;
+}
+
+.tag-search-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.tag-search-option:hover {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.tag-search-option input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #6366f1;
+}
+
+.tag-search-option label {
+    flex: 1;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #374151;
+}
+
+/* Selected Tags Display */
+.selected-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.selected-tag {
+    background: #6366f1;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 16px;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.selected-tag .remove-tag {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Delete Buttons */
+.delete-btn {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 2px solid rgba(239, 68, 68, 0.2);
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.delete-btn:hover {
+    background: #ef4444;
+    color: white;
+    border-color: #ef4444;
+}
+
+.delete-btn:active {
+    transform: scale(0.98);
+}
+
+/* Mobile-friendly delete buttons */
+@media (max-width: 768px) {
+    .delete-btn {
+        min-height: 44px;
+        min-width: 44px;
+        justify-content: center;
+    }
+}
+
 .category-card {
     background: rgba(255, 255, 255, 0.95);
     border-radius: 12px;
