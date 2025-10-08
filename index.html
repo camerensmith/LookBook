@@ -11,6 +11,11 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
     <link rel="stylesheet" href="styles.css">
+    
+    <!-- MUI Web Components -->
+    <script type="module" src="https://unpkg.com/@mui/material@latest/umd/material-ui.development.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 </head>
 <body>
     <div id="app">
@@ -18,16 +23,30 @@
         <header class="header">
             <h1>Lookbook</h1>
             <div>
-                <button id="authBtn" class="menu-btn">Sign in</button>
-                <button id="menuBtn" class="menu-btn">☰</button>
+                <button id="authBtn" class="menu-btn mui-btn">
+                    <span class="material-icons">account_circle</span>
+                    <span>Sign in</span>
+                </button>
+                <button id="menuBtn" class="menu-btn mui-btn">
+                    <span class="material-icons">menu</span>
+                </button>
             </div>
         </header>
 
         <!-- Main Navigation -->
         <nav id="mainNav" class="main-nav">
-            <button class="nav-btn" data-action="create-category">Create Category</button>
-            <button class="nav-btn" data-action="add-outfit">Add Outfit</button>
-            <button class="nav-btn" data-action="add-article">Add Article</button>
+            <button class="nav-btn mui-btn" data-action="create-category">
+                <span class="material-icons">folder_plus</span>
+                <span>Create Category</span>
+            </button>
+            <button class="nav-btn mui-btn" data-action="add-outfit">
+                <span class="material-icons">checkroom</span>
+                <span>Add Outfit</span>
+            </button>
+            <button class="nav-btn mui-btn" data-action="add-article">
+                <span class="material-icons">add_a_photo</span>
+                <span>Add Article</span>
+            </button>
         </nav>
 
         <!-- Main Content Area -->
@@ -146,22 +165,34 @@
 
     <!-- Auth Modal -->
     <div id="authModal" class="modal hidden">
-        <div class="modal-content" style="max-width:420px;">
-            <h2 style="margin-bottom:1rem;">Sign in to Lookbook</h2>
+        <div class="modal-content mui-modal" style="max-width:420px;">
+            <h2 style="margin-bottom:1rem; display: flex; align-items: center; gap: 8px;">
+                <span class="material-icons">account_circle</span>
+                Sign in to Lookbook
+            </h2>
             <div class="camera-controls" style="margin:0 0 1rem 0;">
-                <button id="googleSignInBtn" class="btn-primary" style="width:100%;">Continue with Google</button>
+                <button id="googleSignInBtn" class="btn-primary mui-btn" style="width:100%;">
+                    <span class="material-icons">login</span>
+                    <span>Continue with Google</span>
+                </button>
             </div>
             <div class="camera-controls" style="margin:0 0 1rem 0;">
-                <button id="appleSignInBtn" class="btn-secondary" style="width:100%;">Continue with Apple</button>
+                <button id="appleSignInBtn" class="btn-secondary mui-btn" style="width:100%;">
+                    <span class="material-icons">apple</span>
+                    <span>Continue with Apple</span>
+                </button>
             </div>
             <div class="form" style="margin:0 0 0.5rem 0;padding:1rem;">
-                <input type="email" id="authEmail" placeholder="Email">
-                <input type="password" id="authPassword" placeholder="Password">
-                <button id="emailAuthBtn" class="btn-primary">Sign in</button>
-                <button id="toggleAuthModeBtn" class="btn-secondary">Switch to Sign up</button>
+                <input type="email" id="authEmail" placeholder="Email" class="mui-input">
+                <input type="password" id="authPassword" placeholder="Password" class="mui-input">
+                <button id="emailAuthBtn" class="btn-primary mui-btn">Sign in</button>
+                <button id="toggleAuthModeBtn" class="btn-secondary mui-btn">Switch to Sign up</button>
             </div>
             <div class="camera-controls">
-                <button id="closeAuthBtn" class="btn-secondary">Close</button>
+                <button id="closeAuthBtn" class="btn-secondary mui-btn">
+                    <span class="material-icons">close</span>
+                    <span>Close</span>
+                </button>
             </div>
         </div>
     </div>
