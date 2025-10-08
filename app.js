@@ -1358,31 +1358,69 @@ class LookbookApp {
             const categoryOutfits = document.getElementById('categoryOutfits');
             if (!categoryOutfits) return;
             
-            categoryOutfits.innerHTML = '';
+            // Show loading state
+            categoryOutfits.innerHTML = '<div class="loading-spinner">Loading outfits...</div>';
             
-            const categoryOutfitsList = this.outfits.filter(o => o.categoryId === category.id);
+            // Reload fresh data to ensure we have the latest outfits
+            this.loadData();
             
-            if (categoryOutfitsList.length === 0) {
-                categoryOutfits.innerHTML = '<p style="text-align: center; color: #666;">No outfits in this category yet.</p>';
-            } else {
-                categoryOutfitsList.forEach(outfit => {
-                    const outfitElement = document.createElement('div');
-                    outfitElement.className = 'outfit-card';
-                    outfitElement.onclick = () => this.showOutfitDetail(outfit);
-                    
-                    outfitElement.innerHTML = `
-                        <h3>${outfit.name}</h3>
-                        <p>${outfit.items.length} item${outfit.items.length !== 1 ? 's' : ''}</p>
-                    `;
-                    
-                    categoryOutfits.appendChild(outfitElement);
-                });
-            }
+            // Use requestAnimationFrame for smooth rendering
+            requestAnimationFrame(() => {
+                this.renderCategoryOutfits(category, categoryOutfits);
+            });
             
             this.navigateTo('categoryDetail');
             console.log('Category detail shown:', category.name);
         } catch (error) {
             console.error('Error showing category detail:', error);
+            const categoryOutfits = document.getElementById('categoryOutfits');
+            if (categoryOutfits) {
+                categoryOutfits.innerHTML = '<div class="error-message">Failed to load outfits</div>';
+            }
+        }
+    }
+    
+    renderCategoryOutfits(category, categoryOutfits) {
+        try {
+            categoryOutfits.innerHTML = '';
+            
+            const categoryOutfitsList = this.outfits.filter(o => o.categoryId === category.id);
+            
+            if (categoryOutfitsList.length === 0) {
+                categoryOutfits.innerHTML = '<p style="text-align: center; color: #666; padding: 2rem;">No outfits in this category yet.</p>';
+            } else {
+                // Create document fragment for better performance
+                const fragment = document.createDocumentFragment();
+                
+                categoryOutfitsList.forEach(outfit => {
+                    const outfitElement = document.createElement('div');
+                    outfitElement.className = 'outfit-card';
+                    outfitElement.setAttribute('data-outfit-id', outfit.id);
+                    
+                    // Use touch-friendly event handling
+                    outfitElement.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        this.showOutfitDetail(outfit);
+                    }, { passive: true });
+                    
+                    outfitElement.innerHTML = `
+                        <div class="outfit-icon">
+                            <span class="material-icons">checkroom</span>
+                        </div>
+                        <h3>${this.escapeHtml(outfit.name)}</h3>
+                        <p>${outfit.items.length} item${outfit.items.length !== 1 ? 's' : ''}</p>
+                    `;
+                    
+                    fragment.appendChild(outfitElement);
+                });
+                
+                categoryOutfits.appendChild(fragment);
+            }
+            
+            console.log('Category outfits rendered:', categoryOutfitsList.length);
+        } catch (error) {
+            console.error('Error rendering category outfits:', error);
+            categoryOutfits.innerHTML = '<div class="error-message">Failed to load outfits</div>';
         }
     }
 
