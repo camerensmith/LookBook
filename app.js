@@ -234,7 +234,8 @@ class LookbookApp {
                 categories: this.categories.length,
                 articles: this.articles.length,
                 outfits: this.outfits.length,
-                source: this.user && this.db ? 'Firestore' : 'localStorage'
+                source: this.user && this.db ? 'Firestore' : 'localStorage',
+                categoriesData: this.categories
             });
         } catch (error) {
             console.error('Error loading data:', error);
@@ -573,10 +574,16 @@ class LookbookApp {
                 googleBtn.addEventListener('click', async () => {
                     try {
                         const provider = new firebase.auth.GoogleAuthProvider();
-                        await firebase.auth().signInWithPopup(provider);
+                        // Try popup first, fallback to redirect if popup fails
+                        try {
+                            await firebase.auth().signInWithPopup(provider);
+                        } catch (popupError) {
+                            console.warn('Popup failed, trying redirect:', popupError);
+                            await firebase.auth().signInWithRedirect(provider);
+                        }
                     } catch (err) {
                         console.error('Google sign-in error:', err);
-                        alert('Google sign-in failed.');
+                        alert('Google sign-in failed. Please check your browser settings and try again.');
                     }
                 });
             }
@@ -673,7 +680,14 @@ class LookbookApp {
             // Handle specific view logic
             switch (normalized) {
                 case 'categories':
-                    this.renderCategories();
+                    // Ensure fresh data is loaded when navigating to categories
+                    this.loadData().then(() => {
+                        this.renderCategories();
+                    }).catch(error => {
+                        console.error('Error loading data for categories view:', error);
+                        // Still render with current data
+                        this.renderCategories();
+                    });
                     break;
                 case 'addOutfit':
                     this.renderArticles();
@@ -1630,6 +1644,8 @@ class LookbookApp {
                 console.error('Categories list element not found');
                 return;
             }
+            
+            console.log('Rendering categories, count:', this.categories.length, 'categories:', this.categories);
             
             // Show loading state
             categoriesList.innerHTML = '<div class="loading-spinner">Loading categories...</div>';
