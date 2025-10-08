@@ -31,14 +31,51 @@ class LookbookApp {
 
     init() {
         try {
+            this.optimizeForMobile();
             this.bindEvents();
             this.loadData();
-            this.renderCategories();
-            this.renderArticles();
-            this.updateCategorySelect();
+            
+            // Defer heavy operations for mobile performance
+            if (this.isMobile()) {
+                // Load critical UI first
+                this.renderCategories();
+                
+                // Defer non-critical operations
+                setTimeout(() => {
+                    this.renderArticles();
+                    this.updateCategorySelect();
+                }, 100);
+            } else {
+                this.renderCategories();
+                this.renderArticles();
+                this.updateCategorySelect();
+            }
+            
             console.log('App initialized successfully');
         } catch (error) {
             console.error('Error initializing app:', error);
+        }
+    }
+    
+    isMobile() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+               window.innerWidth <= 768;
+    }
+    
+    // Mobile performance optimizations
+    optimizeForMobile() {
+        if (this.isMobile()) {
+            // Reduce animation complexity on mobile
+            document.documentElement.style.setProperty('--animation-duration', '0.2s');
+            
+            // Optimize touch events
+            document.addEventListener('touchstart', () => {}, { passive: true });
+            document.addEventListener('touchmove', () => {}, { passive: true });
+            
+            // Reduce memory usage
+            this.batchSize = 3; // Smaller batches for mobile
+        } else {
+            this.batchSize = 5; // Larger batches for desktop
         }
     }
 
@@ -55,9 +92,27 @@ class LookbookApp {
             const artKey = this.getStorageKey('articles');
             const outfitKey = this.getStorageKey('outfits');
 
-            this.categories = JSON.parse(localStorage.getItem(catKey)) || [];
-            this.articles = JSON.parse(localStorage.getItem(artKey)) || [];
-            this.outfits = JSON.parse(localStorage.getItem(outfitKey)) || [];
+            // Use try-catch for each localStorage operation to prevent total failure
+            try {
+                this.categories = JSON.parse(localStorage.getItem(catKey)) || [];
+            } catch (e) {
+                console.warn('Failed to load categories, using empty array');
+                this.categories = [];
+            }
+            
+            try {
+                this.articles = JSON.parse(localStorage.getItem(artKey)) || [];
+            } catch (e) {
+                console.warn('Failed to load articles, using empty array');
+                this.articles = [];
+            }
+            
+            try {
+                this.outfits = JSON.parse(localStorage.getItem(outfitKey)) || [];
+            } catch (e) {
+                console.warn('Failed to load outfits, using empty array');
+                this.outfits = [];
+            }
 
             console.log('Data loaded', {
                 user: this.user ? this.user.uid : 'guest',
@@ -67,6 +122,10 @@ class LookbookApp {
             });
         } catch (error) {
             console.error('Error loading data:', error);
+            // Initialize with empty arrays to prevent app crash
+            this.categories = [];
+            this.articles = [];
+            this.outfits = [];
         }
     }
 
@@ -1202,7 +1261,7 @@ class LookbookApp {
         }
     }
 
-    // Category and Outfit Display
+    // Category and Outfit Display - Mobile Optimized
     renderCategories() {
         try {
             const categoriesList = document.getElementById('categoriesList');
@@ -1211,27 +1270,81 @@ class LookbookApp {
                 return;
             }
             
-            categoriesList.innerHTML = '';
-
-            this.categories.forEach(category => {
-                const categoryElement = document.createElement('div');
-                categoryElement.className = 'category-card';
-                categoryElement.onclick = () => this.showCategoryDetail(category);
-                
-                const outfitCount = this.outfits.filter(o => o.categoryId === category.id).length;
-                
-                categoryElement.innerHTML = `
-                    <h3>${category.name}</h3>
-                    <div class="outfit-count">${outfitCount} outfit${outfitCount !== 1 ? 's' : ''}</div>
-                `;
-                
-                categoriesList.appendChild(categoryElement);
+            // Show loading state
+            categoriesList.innerHTML = '<div class="loading-spinner">Loading categories...</div>';
+            
+            // Use requestAnimationFrame for smooth rendering
+            requestAnimationFrame(() => {
+                this.renderCategoriesBatch(categoriesList, 0);
             });
             
-            console.log('Categories rendered:', this.categories.length);
         } catch (error) {
             console.error('Error rendering categories:', error);
+            const categoriesList = document.getElementById('categoriesList');
+            if (categoriesList) {
+                categoriesList.innerHTML = '<div class="error-message">Failed to load categories</div>';
+            }
         }
+    }
+    
+    renderCategoriesBatch(categoriesList, startIndex) {
+        const batchSize = this.batchSize || 5; // Use mobile-optimized batch size
+        const endIndex = Math.min(startIndex + batchSize, this.categories.length);
+        
+        if (startIndex === 0) {
+            categoriesList.innerHTML = '';
+        }
+        
+        // Pre-calculate outfit counts to avoid repeated filtering
+        const outfitCounts = {};
+        this.outfits.forEach(outfit => {
+            outfitCounts[outfit.categoryId] = (outfitCounts[outfit.categoryId] || 0) + 1;
+        });
+        
+        // Create document fragment for batch DOM updates
+        const fragment = document.createDocumentFragment();
+        
+        for (let i = startIndex; i < endIndex; i++) {
+            const category = this.categories[i];
+            const categoryElement = document.createElement('div');
+            categoryElement.className = 'category-card';
+            categoryElement.setAttribute('data-category-id', category.id);
+            
+            // Use touch-friendly event handling
+            categoryElement.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showCategoryDetail(category);
+            }, { passive: true });
+            
+            const outfitCount = outfitCounts[category.id] || 0;
+            
+            categoryElement.innerHTML = `
+                <div class="category-icon">
+                    <span class="material-icons">folder</span>
+                </div>
+                <h3>${this.escapeHtml(category.name)}</h3>
+                <div class="outfit-count">${outfitCount} outfit${outfitCount !== 1 ? 's' : ''}</div>
+            `;
+            
+            fragment.appendChild(categoryElement);
+        }
+        
+        categoriesList.appendChild(fragment);
+        
+        // Continue with next batch if there are more categories
+        if (endIndex < this.categories.length) {
+            requestAnimationFrame(() => {
+                this.renderCategoriesBatch(categoriesList, endIndex);
+            });
+        } else {
+            console.log('Categories rendered:', this.categories.length);
+        }
+    }
+    
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     showCategoryDetail(category) {
