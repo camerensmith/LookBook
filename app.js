@@ -2419,6 +2419,9 @@ class LookbookApp {
             this.draggedElement = element;
             this.isDragging = true;
             
+            // Lock touch screen to prevent scrolling
+            this.lockTouchScreen();
+            
             const rect = element.getBoundingClientRect();
             this.dragOffset = {
                 x: touch.clientX - rect.left,
@@ -2518,16 +2521,26 @@ class LookbookApp {
             this.draggedElement = null;
             this.isDragging = false;
             
+            // Unlock touch screen
+            this.unlockTouchScreen();
+            
             console.log('Touch drag ended, dropped on canvas:', droppedOnCanvas);
         } catch (error) {
             console.error('Error ending touch drag:', error);
+            // Make sure to unlock even if there's an error
+            this.unlockTouchScreen();
         }
     }
 
     addArticleToOutfit(articleId, x, y) {
         try {
+            console.log('Adding article to outfit:', { articleId, x, y, currentItems: this.currentOutfitItems.length });
+            
             const article = this.articles.find(a => a.id === articleId);
-            if (!article) return;
+            if (!article) {
+                console.warn('Article not found:', articleId);
+                return;
+            }
 
             const outfitItem = {
                 id: Date.now().toString(),
@@ -2538,6 +2551,8 @@ class LookbookApp {
             };
 
             this.currentOutfitItems.push(outfitItem);
+            console.log('Outfit items after adding:', this.currentOutfitItems.length);
+            
             this.renderOutfitItem(outfitItem);
             this.updateSaveButton();
             
@@ -2616,21 +2631,32 @@ class LookbookApp {
             itemElement.style.left = outfitItem.x + 'px';
             itemElement.style.top = outfitItem.y + 'px';
             
-            const imageSrc = outfitItem.article.processedImage || outfitItem.article.image || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yMCAyMEg2MFY2MEgyMFYyMFoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+';
+            // Handle both data structures: item.image or item.article.image
+            const imageSrc = outfitItem.image || 
+                            (outfitItem.article && (outfitItem.article.processedImage || outfitItem.article.image)) || 
+                            'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yMCAyMEg2MFY2MEgyMFYyMFoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+';
+            
+            // Handle both data structures for name: item.name or item.article.name
+            const itemName = outfitItem.name || (outfitItem.article && outfitItem.article.name) || 'Unknown Item';
             
             itemElement.innerHTML = `
-                <img src="${imageSrc}" alt="${this.escapeHtml(outfitItem.article.name)}">
-                <button class="remove-btn" onclick="app.removeOutfitItem('${outfitItem.id}')">×</button>
+                <img src="${imageSrc}" alt="${this.escapeHtml(itemName)}" class="outfit-item-image">
+                <div class="outfit-item-name">${this.escapeHtml(itemName)}</div>
+                <button class="remove-item-btn" onclick="window.app.removeOutfitItem('${outfitItem.id}')">
+                    <span class="material-icons">close</span>
+                </button>
             `;
             
-            // Make outfit items draggable
-            this.makeDraggable(itemElement, outfitItem);
+            // Make outfit items draggable using the correct method
+            this.makeOutfitItemDraggable(itemElement, outfitItem);
             
             canvas.appendChild(itemElement);
             
             // Remove placeholder text
             const placeholder = canvas.querySelector('.placeholder-text');
             if (placeholder) placeholder.remove();
+            
+            console.log('Outfit item rendered:', outfitItem.id);
         } catch (error) {
             console.error('Error rendering outfit item:', error);
         }
@@ -2639,6 +2665,24 @@ class LookbookApp {
     makeOutfitItemDraggable(element, outfitItem, mode = 'normal') {
         let isDragging = false;
         let startX, startY, startLeft, startTop;
+        
+        const lockTouchScreen = () => {
+            // Prevent scrolling and other touch interactions
+            document.body.style.overflow = 'hidden';
+            document.body.style.touchAction = 'none';
+            document.body.style.userSelect = 'none';
+            document.body.style.webkitUserSelect = 'none';
+            document.body.style.webkitTouchCallout = 'none';
+        };
+        
+        const unlockTouchScreen = () => {
+            // Restore normal touch behavior
+            document.body.style.overflow = '';
+            document.body.style.touchAction = '';
+            document.body.style.userSelect = '';
+            document.body.style.webkitUserSelect = '';
+            document.body.style.webkitTouchCallout = '';
+        };
         
         element.addEventListener('mousedown', (e) => {
             if (e.target.closest('.remove-item-btn') || e.target.closest('.remove-btn')) return;
@@ -2675,7 +2719,7 @@ class LookbookApp {
             }
         });
         
-        // Touch events for mobile
+        // Touch events for mobile with screen locking
         element.addEventListener('touchstart', (e) => {
             if (e.target.closest('.remove-item-btn') || e.target.closest('.remove-btn')) return;
             
@@ -2687,11 +2731,17 @@ class LookbookApp {
             startTop = parseInt(element.style.top) || 0;
             
             element.style.zIndex = '100';
-        });
+            
+            // Lock touch screen to prevent scrolling
+            lockTouchScreen();
+        }, { passive: false });
         
         document.addEventListener('touchmove', (e) => {
             if (!isDragging) return;
+            
+            // Always prevent default to stop scrolling
             e.preventDefault();
+            e.stopPropagation();
             
             const touch = e.touches[0];
             const deltaX = touch.clientX - startX;
@@ -2702,14 +2752,26 @@ class LookbookApp {
             
             outfitItem.x = startLeft + deltaX;
             outfitItem.y = startTop + deltaY;
-        });
+        }, { passive: false });
         
-        document.addEventListener('touchend', () => {
+        document.addEventListener('touchend', (e) => {
             if (isDragging) {
                 isDragging = false;
                 element.style.zIndex = '10';
+                
+                // Unlock touch screen
+                unlockTouchScreen();
             }
-        });
+        }, { passive: false });
+        
+        // Also unlock on touch cancel (when touch is interrupted)
+        document.addEventListener('touchcancel', () => {
+            if (isDragging) {
+                isDragging = false;
+                element.style.zIndex = '10';
+                unlockTouchScreen();
+            }
+        }, { passive: false });
     }
     
     makeDraggable(element, outfitItem) {
@@ -2881,7 +2943,15 @@ class LookbookApp {
         try {
             const saveBtn = document.getElementById('saveOutfitBtn');
             if (saveBtn) {
-                saveBtn.disabled = this.currentOutfitItems.length === 0;
+                const shouldDisable = this.currentOutfitItems.length === 0;
+                saveBtn.disabled = shouldDisable;
+                console.log('Save button updated:', {
+                    itemsCount: this.currentOutfitItems.length,
+                    disabled: shouldDisable,
+                    buttonFound: !!saveBtn
+                });
+            } else {
+                console.warn('Save button not found!');
             }
         } catch (error) {
             console.error('Error updating save button:', error);
@@ -3220,6 +3290,24 @@ class LookbookApp {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+    
+    lockTouchScreen() {
+        // Prevent scrolling and other touch interactions
+        document.body.style.overflow = 'hidden';
+        document.body.style.touchAction = 'none';
+        document.body.style.userSelect = 'none';
+        document.body.style.webkitUserSelect = 'none';
+        document.body.style.webkitTouchCallout = 'none';
+    }
+    
+    unlockTouchScreen() {
+        // Restore normal touch behavior
+        document.body.style.overflow = '';
+        document.body.style.touchAction = '';
+        document.body.style.userSelect = '';
+        document.body.style.webkitUserSelect = '';
+        document.body.style.webkitTouchCallout = '';
     }
     
     // Toast notification system
@@ -4395,6 +4483,11 @@ class LookbookApp {
                 element.style.opacity = '0.8';
                 element.style.transform = 'scale(1.05)';
                 
+                // Lock touch screen for mobile dragging
+                if (e.touches) {
+                    this.lockTouchScreen();
+                }
+                
                 e.preventDefault();
             };
             
@@ -4420,6 +4513,11 @@ class LookbookApp {
                 element.style.zIndex = '';
                 element.style.opacity = '';
                 element.style.transform = '';
+                
+                // Unlock touch screen for mobile
+                if (e.changedTouches) {
+                    this.unlockTouchScreen();
+                }
                 
                 // Check if dropped on outfit canvas
                 const canvas = document.getElementById(mode === 'edit' ? 'editOutfitCanvas' : 'outfitCanvas');
