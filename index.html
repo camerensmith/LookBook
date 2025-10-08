@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Lookbook">
     <meta name="theme-color" content="#6366f1">
-    <title>Lookbook - Your Personal Style Manager</title>
+    <title>Lookbook - Alice's Personal Style Manager</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
     <link rel="stylesheet" href="styles.css">
@@ -46,6 +46,10 @@
 
         <!-- Main Navigation -->
         <nav id="mainNav" class="main-nav">
+            <button class="nav-btn mui-btn" data-action="collections">
+                <span class="material-icons">collections</span>
+                <span>Collections</span>
+            </button>
             <button class="nav-btn mui-btn" data-action="create-category">
                 <span class="material-icons">folder_plus</span>
                 <span>Category</span>
@@ -61,10 +65,6 @@
                 <button class="nav-btn mui-btn" data-action="view-articles">
                     <span class="material-icons">inventory</span>
                     <span>Add/View Articles</span>
-                </button>
-                <button class="nav-btn mui-btn" data-action="collections">
-                    <span class="material-icons">collections</span>
-                    <span>Collections</span>
                 </button>
         </nav>
 
@@ -253,7 +253,8 @@
                     <input type="text" id="collectionName" placeholder="Collection Name" required>
                     <textarea id="collectionDescription" placeholder="Description (Optional)" rows="3"></textarea>
                     <div class="category-selection">
-                        <h3>Select Categories</h3>
+                        <h3>Add Categories (Optional)</h3>
+                        <p class="help-text">You can add categories now or later by drilling into the collection.</p>
                         <div id="categoryCheckboxes" class="category-checkboxes">
                             <!-- Category checkboxes will be populated here -->
                         </div>
@@ -262,7 +263,56 @@
                 </form>
                 <button class="btn-secondary back-btn" data-back="collections">Back</button>
             </div>
+
+            <!-- Collection Detail View -->
+            <div id="collectionDetailView" class="view">
+                <h2 id="collectionDetailTitle">Collection</h2>
+                <div class="collection-actions">
+                    <button class="btn-primary" onclick="window.app.showAddCategoryToCollection()">
+                        <span class="material-icons">add</span>
+                        <span>Add Category</span>
+                    </button>
+                    <button class="btn-secondary" onclick="window.app.editCollection()">
+                        <span class="material-icons">edit</span>
+                        <span>Edit Collection</span>
+                    </button>
+                </div>
+                <div id="collectionCategories" class="collection-categories-list">
+                    <!-- Categories in this collection will be populated here -->
+                </div>
+                <button class="btn-secondary back-btn" data-back="collections">Back</button>
+            </div>
         </main>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden">
+        <div class="toast-content">
+            <span class="toast-icon"></span>
+            <span class="toast-message"></span>
+        </div>
+    </div>
+
+    <!-- Save Outfit Modal -->
+    <div id="saveOutfitModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Save Outfit</h3>
+                <button id="closeSaveOutfitModal" class="close-btn">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <form id="saveOutfitForm" class="form">
+                <input type="text" id="modalOutfitName" placeholder="Outfit Name" required>
+                <select id="modalOutfitCategory">
+                    <option value="">Select Category (Optional)</option>
+                </select>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="window.app.closeSaveOutfitModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Outfit</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- Camera Modal -->

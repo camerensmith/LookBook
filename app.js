@@ -10,6 +10,7 @@ class LookbookApp {
         this.currentView = 'categories';
         this.currentCategory = null;
         this.currentOutfit = null;
+        this.currentCollection = null;
         this.cameraStream = null;
         this.capturedImage = null;
         this.processedImage = null;
@@ -521,6 +522,9 @@ class LookbookApp {
             
             // Initialize long press functionality
             this.initLongPress();
+            
+            // Save outfit modal events
+            this.bindSaveOutfitModalEvents();
 
             const clearOutfitBtn = document.getElementById('clearOutfitBtn');
             if (clearOutfitBtn) {
@@ -534,7 +538,7 @@ class LookbookApp {
             if (saveOutfitBtn) {
                 saveOutfitBtn.addEventListener('click', () => {
                     console.log('Save outfit button clicked');
-                    this.showOutfitForm();
+                    this.showSaveOutfitModal();
                 });
             }
 
@@ -747,6 +751,9 @@ class LookbookApp {
                     break;
                 case 'createCollection':
                     this.showCreateCollectionForm();
+                    break;
+                case 'collectionDetail':
+                    this.renderCollectionDetail();
                     break;
             }
         } catch (error) {
@@ -1241,10 +1248,10 @@ class LookbookApp {
             this.navigateTo('categories');
             
             console.log('Article saved successfully:', article);
-            alert('Article saved successfully!');
+            this.showToast('Article saved successfully!');
         } catch (error) {
             console.error('Error saving article:', error);
-            alert('Error saving article. Please try again.');
+            this.showToast('Error saving article. Please try again.', 'error');
         }
     }
 
@@ -1731,14 +1738,11 @@ class LookbookApp {
             const categoryIds = Array.from(checkboxes).map(cb => cb.value);
             
             if (!name) {
-                alert('Please enter a collection name');
+                this.showToast('Please enter a collection name', 'error');
                 return;
             }
             
-            if (categoryIds.length === 0) {
-                alert('Please select at least one category');
-                return;
-            }
+            // Categories are now optional - collections can exist without categories initially
             
             const collection = {
                 id: Date.now().toString(),
@@ -1760,6 +1764,7 @@ class LookbookApp {
             this.navigateTo('collections');
             
             console.log('Collection created:', collection);
+            this.showToast('Collection created successfully!');
         } catch (error) {
             console.error('Error creating collection:', error);
         }
@@ -1773,16 +1778,190 @@ class LookbookApp {
                 return;
             }
             
-            // For now, just show an alert with collection details
-            // In the future, this could show a dedicated collection view
-            const categoryNames = collection.categoryIds
-                .map(id => this.categories.find(c => c.id === id)?.name)
-                .filter(name => name)
-                .join(', ');
-            
-            alert(`Collection: ${collection.name}\n\nDescription: ${collection.description || 'No description'}\n\nCategories: ${categoryNames}`);
+            // Store current collection for the detail view
+            this.currentCollection = collection;
+            this.navigateTo('collectionDetail');
         } catch (error) {
             console.error('Error viewing collection:', error);
+        }
+    }
+    
+    renderCollectionDetail() {
+        try {
+            if (!this.currentCollection) {
+                console.error('No current collection to render');
+                return;
+            }
+            
+            const title = document.getElementById('collectionDetailTitle');
+            const categoriesList = document.getElementById('collectionCategories');
+            
+            if (title) {
+                title.textContent = this.currentCollection.name;
+            }
+            
+            if (categoriesList) {
+                if (this.currentCollection.categoryIds.length === 0) {
+                    categoriesList.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">
+                                <span class="material-icons">folder_open</span>
+                            </div>
+                            <h3>No Categories Yet</h3>
+                            <p>Add categories to this collection to organize your outfits!</p>
+                            <button class="btn-primary" onclick="window.app.showAddCategoryToCollection()">
+                                <span class="material-icons">add</span>
+                                <span>Add Category</span>
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                categoriesList.innerHTML = '';
+                
+                this.currentCollection.categoryIds.forEach(categoryId => {
+                    const category = this.categories.find(c => c.id === categoryId);
+                    if (category) {
+                        const categoryCard = document.createElement('div');
+                        categoryCard.className = 'collection-category-card';
+                        categoryCard.dataset.categoryId = category.id;
+                        
+                        const outfitCount = category.outfits ? category.outfits.length : 0;
+                        
+                        categoryCard.innerHTML = `
+                            <button class="remove-category-btn" onclick="window.app.removeCategoryFromCollection('${categoryId}')" title="Remove from collection">×</button>
+                            <div class="category-icon">
+                                ${category.icon ? 
+                                    `<img src="${category.icon}" alt="${this.escapeHtml(category.name)}" class="category-custom-icon">` :
+                                    `<span class="material-icons">folder</span>`
+                                }
+                            </div>
+                            <h3>${this.escapeHtml(category.name)}</h3>
+                            <p>${outfitCount} outfit${outfitCount !== 1 ? 's' : ''}</p>
+                        `;
+                        
+                        // Add click handler to view category
+                        categoryCard.addEventListener('click', (e) => {
+                            if (!e.target.classList.contains('remove-category-btn')) {
+                                this.currentCategory = category;
+                                this.navigateTo('categoryDetail');
+                            }
+                        });
+                        
+                        categoriesList.appendChild(categoryCard);
+                    }
+                });
+            }
+            
+            console.log('Collection detail rendered for:', this.currentCollection.name);
+        } catch (error) {
+            console.error('Error rendering collection detail:', error);
+        }
+    }
+    
+    showAddCategoryToCollection() {
+        try {
+            if (!this.currentCollection) {
+                console.error('No current collection');
+                return;
+            }
+            
+            // Get categories not already in this collection
+            const availableCategories = this.categories.filter(cat => 
+                !this.currentCollection.categoryIds.includes(cat.id)
+            );
+            
+            if (availableCategories.length === 0) {
+                this.showToast('No available categories to add. Create a category first!', 'info');
+                return;
+            }
+            
+            // Create a simple selection dialog
+            const categoryNames = availableCategories.map(cat => cat.name);
+            const selectedName = prompt(`Available categories:\n${categoryNames.join('\n')}\n\nEnter the name of the category to add:`);
+            
+            if (selectedName) {
+                const category = availableCategories.find(cat => 
+                    cat.name.toLowerCase() === selectedName.toLowerCase()
+                );
+                
+                if (category) {
+                    this.addCategoryToCollection(category.id);
+                } else {
+                    this.showToast('Category not found. Please check the spelling.', 'error');
+                }
+            }
+        } catch (error) {
+            console.error('Error showing add category dialog:', error);
+        }
+    }
+    
+    addCategoryToCollection(categoryId) {
+        try {
+            if (!this.currentCollection) {
+                console.error('No current collection');
+                return;
+            }
+            
+            if (!this.currentCollection.categoryIds.includes(categoryId)) {
+                this.currentCollection.categoryIds.push(categoryId);
+                this.saveData();
+                this.renderCollectionDetail();
+                console.log('Category added to collection:', categoryId);
+            this.showToast('Category added to collection!');
+            }
+        } catch (error) {
+            console.error('Error adding category to collection:', error);
+        }
+    }
+    
+    removeCategoryFromCollection(categoryId) {
+        try {
+            if (!this.currentCollection) {
+                console.error('No current collection');
+                return;
+            }
+            
+            const confirmed = confirm('Remove this category from the collection?');
+            if (confirmed) {
+                this.currentCollection.categoryIds = this.currentCollection.categoryIds.filter(id => id !== categoryId);
+                this.saveData();
+                this.renderCollectionDetail();
+                console.log('Category removed from collection:', categoryId);
+                this.showToast('Category removed from collection!');
+            }
+        } catch (error) {
+            console.error('Error removing category from collection:', error);
+        }
+    }
+    
+    editCollection() {
+        try {
+            if (!this.currentCollection) {
+                console.error('No current collection');
+                return;
+            }
+            
+            const newName = prompt('Edit collection name:', this.currentCollection.name);
+            if (newName && newName.trim() !== this.currentCollection.name) {
+                this.currentCollection.name = newName.trim();
+                this.saveData();
+                this.renderCollectionDetail();
+                console.log('Collection name updated');
+                this.showToast('Collection updated!');
+            }
+            
+            const newDescription = prompt('Edit collection description:', this.currentCollection.description || '');
+            if (newDescription !== null) {
+                this.currentCollection.description = newDescription.trim();
+                this.saveData();
+                this.renderCollectionDetail();
+                console.log('Collection description updated');
+                this.showToast('Collection updated!');
+            }
+        } catch (error) {
+            console.error('Error editing collection:', error);
         }
     }
     
@@ -2593,6 +2772,236 @@ class LookbookApp {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+    
+    // Toast notification system
+    showToast(message, type = 'success', duration = 3000) {
+        try {
+            const toast = document.getElementById('toast');
+            const toastIcon = toast.querySelector('.toast-icon');
+            const toastMessage = toast.querySelector('.toast-message');
+            
+            if (!toast || !toastIcon || !toastMessage) {
+                console.error('Toast elements not found');
+                return;
+            }
+            
+            // Set message
+            toastMessage.textContent = message;
+            
+            // Set icon and type
+            toast.className = 'toast';
+            switch (type) {
+                case 'success':
+                    toastIcon.textContent = '✓';
+                    toast.classList.add('success');
+                    break;
+                case 'error':
+                    toastIcon.textContent = '✕';
+                    toast.classList.add('error');
+                    break;
+                case 'info':
+                    toastIcon.textContent = 'ℹ';
+                    toast.classList.add('info');
+                    break;
+                default:
+                    toastIcon.textContent = '✓';
+                    toast.classList.add('success');
+            }
+            
+            // Show toast
+            toast.classList.remove('hidden');
+            toast.classList.add('show');
+            
+            // Auto-hide after duration
+            setTimeout(() => {
+                this.hideToast();
+            }, duration);
+            
+        } catch (error) {
+            console.error('Error showing toast:', error);
+        }
+    }
+    
+    hideToast() {
+        try {
+            const toast = document.getElementById('toast');
+            if (toast) {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                }, 300); // Wait for transition
+            }
+        } catch (error) {
+            console.error('Error hiding toast:', error);
+        }
+    }
+    
+    // Save Outfit Modal
+    bindSaveOutfitModalEvents() {
+        try {
+            const modal = document.getElementById('saveOutfitModal');
+            const closeBtn = document.getElementById('closeSaveOutfitModal');
+            const form = document.getElementById('saveOutfitForm');
+            
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    this.closeSaveOutfitModal();
+                });
+            }
+            
+            if (form) {
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.saveOutfitFromModal();
+                });
+            }
+            
+            // Close modal when clicking outside
+            if (modal) {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        this.closeSaveOutfitModal();
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error binding save outfit modal events:', error);
+        }
+    }
+    
+    showSaveOutfitModal() {
+        try {
+            if (this.currentOutfitItems.length === 0) {
+                this.showToast('Please add some articles to your outfit first!', 'info');
+                return;
+            }
+            
+            const modal = document.getElementById('saveOutfitModal');
+            const nameInput = document.getElementById('modalOutfitName');
+            const categorySelect = document.getElementById('modalOutfitCategory');
+            
+            if (modal && nameInput && categorySelect) {
+                // Clear form
+                nameInput.value = '';
+                categorySelect.value = '';
+                
+                // Populate category select
+                this.updateModalCategorySelect();
+                
+                // Show modal
+                modal.classList.remove('hidden');
+                
+                // Focus on name input
+                setTimeout(() => {
+                    nameInput.focus();
+                }, 100);
+            }
+        } catch (error) {
+            console.error('Error showing save outfit modal:', error);
+        }
+    }
+    
+    closeSaveOutfitModal() {
+        try {
+            const modal = document.getElementById('saveOutfitModal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        } catch (error) {
+            console.error('Error closing save outfit modal:', error);
+        }
+    }
+    
+    updateModalCategorySelect() {
+        try {
+            const categorySelect = document.getElementById('modalOutfitCategory');
+            if (!categorySelect) return;
+            
+            // Clear existing options except the first one
+            categorySelect.innerHTML = '<option value="">Select Category (Optional)</option>';
+            
+            this.categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = category.name;
+                categorySelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error updating modal category select:', error);
+        }
+    }
+    
+    async saveOutfitFromModal() {
+        try {
+            const nameInput = document.getElementById('modalOutfitName');
+            const categorySelect = document.getElementById('modalOutfitCategory');
+            
+            if (!nameInput || !categorySelect) {
+                console.error('Modal form inputs not found');
+                return;
+            }
+            
+            const name = nameInput.value.trim();
+            const categoryId = categorySelect.value;
+            
+            if (!name) {
+                this.showToast('Please enter an outfit name', 'error');
+                return;
+            }
+            
+            if (this.currentOutfitItems.length === 0) {
+                this.showToast('Please add some articles to your outfit first!', 'error');
+                return;
+            }
+            
+            // Create outfit object
+            const outfit = {
+                id: Date.now().toString(),
+                name: name,
+                categoryId: categoryId || null,
+                items: [...this.currentOutfitItems],
+                createdAt: new Date().toISOString()
+            };
+            
+            // Generate preview image
+            const previewImage = await this.generateOutfitPreview();
+            outfit.previewImage = previewImage;
+            
+            // Save outfit to category
+            if (categoryId) {
+                const category = this.categories.find(c => c.id === categoryId);
+                if (category) {
+                    if (!category.outfits) category.outfits = [];
+                    category.outfits.push(outfit);
+                }
+            } else {
+                // Save to a default "Uncategorized" category
+                let uncategorizedCategory = this.categories.find(c => c.name === 'Uncategorized');
+                if (!uncategorizedCategory) {
+                    uncategorizedCategory = {
+                        id: Date.now().toString(),
+                        name: 'Uncategorized',
+                        outfits: []
+                    };
+                    this.categories.push(uncategorizedCategory);
+                }
+                uncategorizedCategory.outfits.push(outfit);
+            }
+            
+            // Save data and clear outfit
+            this.saveData();
+            this.clearOutfit();
+            this.closeSaveOutfitModal();
+            this.renderCreatedOutfits();
+            
+            this.showToast('Outfit saved successfully!');
+            console.log('Outfit saved:', outfit);
+            
+        } catch (error) {
+            console.error('Error saving outfit from modal:', error);
+            this.showToast('Error saving outfit. Please try again.', 'error');
+        }
     }
 
     showCategoryDetail(category) {
