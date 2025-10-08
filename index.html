@@ -51,9 +51,9 @@
                 <span class="material-icons">collections</span>
                 <span>Collections</span>
             </button>
-            <button class="nav-btn mui-btn" data-action="create-category">
-                <span class="material-icons">folder_plus</span>
-                <span>Category</span>
+            <button class="nav-btn mui-btn" data-action="categories">
+                <span class="material-icons">folder</span>
+                <span>Categories</span>
             </button>
                     <button class="nav-btn mui-btn" data-action="add-outfit">
                         <span class="material-icons">checkroom</span>
@@ -74,6 +74,12 @@
             <!-- Categories View -->
             <div id="categoriesView" class="view active">
                 <h2>Your Categories</h2>
+                <div class="categories-header">
+                    <button class="btn-primary" onclick="window.app.navigateTo('create-category')">
+                        <span class="material-icons">add</span>
+                        <span>Create Category</span>
+                    </button>
+                </div>
                 <div id="categoriesList" class="categories-list">
                     <!-- Categories will be populated here -->
                 </div>

@@ -724,7 +724,7 @@ class LookbookApp {
                     category: this.currentCategory,
                     collection: this.currentCollection
                 });
-                console.log('Added to navigation history:', this.currentView);
+                console.log('Added to navigation history:', this.currentView, 'History length:', this.navigationHistory.length);
             }
             
             // Hide all views
@@ -782,6 +782,10 @@ class LookbookApp {
     // Handle back navigation with history
     navigateBack() {
         try {
+            console.log('NavigateBack called. History length:', this.navigationHistory.length);
+            console.log('Current view:', this.currentView);
+            console.log('History:', this.navigationHistory);
+            
             if (this.navigationHistory.length > 0) {
                 const previousState = this.navigationHistory.pop();
                 console.log('Navigating back to:', previousState);
@@ -794,15 +798,91 @@ class LookbookApp {
                     this.currentCollection = previousState.collection;
                 }
                 
-                // Navigate to previous view
-                this.navigateTo(previousState.view);
+                // Navigate to previous view without adding to history (to avoid infinite loops)
+                this.navigateToWithoutHistory(previousState.view);
             } else {
+                console.log('No history, falling back to categories');
                 // Fallback to categories if no history
                 this.navigateTo('categories');
             }
         } catch (error) {
             console.error('Error navigating back:', error);
             this.navigateTo('categories');
+        }
+    }
+    
+    // Navigate without adding to history (for back navigation)
+    navigateToWithoutHistory(view) {
+        try {
+            console.log('Navigating to (no history):', view);
+            
+            // Normalize incoming view keys
+            const mapViewKey = (key) => {
+                if (!key) return '';
+                const map = {
+                    'categories': 'categories',
+                    'create-category': 'createCategory',
+                    'createCategory': 'createCategory',
+                    'add-outfit': 'addOutfit',
+                    'addOutfit': 'addOutfit',
+                    'add-article': 'addArticle',
+                    'addArticle': 'addArticle',
+                    'view-articles': 'viewArticles',
+                    'viewArticles': 'viewArticles',
+                    'category': 'categoryDetail',
+                    'categoryDetail': 'categoryDetail',
+                    'outfit': 'outfitDetail',
+                    'outfitDetail': 'outfitDetail',
+                    'collections': 'collections',
+                    'collectionDetail': 'collectionDetail'
+                };
+                return map[key] || key;
+            };
+
+            const normalized = mapViewKey(view);
+            
+            // Hide all views
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            
+            // Show target view
+            const targetId = normalized.endsWith('View') ? normalized : (normalized + 'View');
+            const targetView = document.getElementById(targetId);
+            if (targetView) {
+                targetView.classList.add('active');
+                this.currentView = normalized;
+                console.log('Successfully navigated to (no history):', normalized);
+            } else {
+                console.error('Target view not found:', targetId);
+            }
+
+            // Handle specific view logic
+            switch (normalized) {
+                case 'categories':
+                    this.renderCategories();
+                    break;
+                case 'addOutfit':
+                    this.renderArticles();
+                    this.populateTagFilters();
+                    this.renderCreatedOutfits();
+                    break;
+                case 'addArticle':
+                    this.resetArticleForm();
+                    break;
+                case 'viewArticles':
+                    this.renderArticlesGrid();
+                    break;
+                case 'collections':
+                    this.renderCollections();
+                    break;
+                case 'createCollection':
+                    this.showCreateCollectionForm();
+                    break;
+                case 'collectionDetail':
+                    this.renderCollectionDetail();
+                    break;
+            }
+        } catch (error) {
+            console.error('Error navigating to view (no history):', error);
         }
     }
 
@@ -2685,10 +2765,7 @@ class LookbookApp {
                         </div>
                         <h3>No Categories Yet</h3>
                         <p>Create your first category to organize your outfits!</p>
-                        <button class="btn-primary" onclick="window.app.navigateTo('create-category')">
-                            <span class="material-icons">add</span>
-                            <span>Create Category</span>
-                        </button>
+                        <p>Use the "Create Category" button above to get started.</p>
                     </div>
                 `;
                 console.log('No categories found, showing empty state');

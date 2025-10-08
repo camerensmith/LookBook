@@ -433,6 +433,7 @@ body {
 }
 
 /* Collections */
+.categories-header,
 .collections-header {
     margin-bottom: 1.5rem;
     display: flex;
