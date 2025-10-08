@@ -2543,15 +2543,18 @@ class LookbookApp {
             }
 
             const outfitItem = {
-                id: Date.now().toString(),
+                id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
                 articleId: articleId,
+                name: article.name,
+                image: article.processedImage || article.image,
                 x: x - 40, // Center the item
                 y: y - 40,
-                article: article
+                article: article // Keep for backward compatibility
             };
 
             this.currentOutfitItems.push(outfitItem);
             console.log('Outfit items after adding:', this.currentOutfitItems.length);
+            console.log('Outfit item data:', outfitItem);
             
             this.renderOutfitItem(outfitItem);
             this.updateSaveButton();
@@ -2567,6 +2570,8 @@ class LookbookApp {
             const canvas = document.getElementById('outfitCanvas');
             if (!canvas) return;
             
+            console.log('renderOutfitItems called with', this.currentOutfitItems.length, 'items');
+            
             // Clear existing items
             canvas.innerHTML = '';
             
@@ -2576,7 +2581,9 @@ class LookbookApp {
             }
             
             // Render all current outfit items
-            this.currentOutfitItems.forEach(item => {
+            console.log('Current outfit items array:', this.currentOutfitItems);
+            this.currentOutfitItems.forEach((item, index) => {
+                console.log(`Rendering item ${index}:`, item);
                 const itemElement = document.createElement('div');
                 itemElement.className = 'outfit-item';
                 itemElement.id = `outfit-item-${item.id}`;
@@ -2590,11 +2597,14 @@ class LookbookApp {
                 
                 console.log('Rendering outfit item:', {
                     itemId: item.id,
+                    itemName: item.name,
                     hasImage: !!item.image,
                     hasArticle: !!item.article,
                     articleImage: item.article?.image,
                     articleProcessedImage: item.article?.processedImage,
-                    finalImageSrc: imageSrc.substring(0, 50) + '...'
+                    finalImageSrc: imageSrc.substring(0, 50) + '...',
+                    isDataUrl: imageSrc.startsWith('data:'),
+                    isFallback: imageSrc.includes('PHN2ZyB3aWR0aD0iODAi')
                 });
                 
                 // Handle both data structures for name: item.name or item.article.name
@@ -4561,6 +4571,21 @@ class LookbookApp {
     
     addArticleToOutfit(article, mode = 'normal') {
         try {
+            console.log('Adding article to outfit (method 2):', { 
+                articleId: article.id, 
+                articleName: article.name, 
+                hasImage: !!(article.processedImage || article.image),
+                mode,
+                currentItems: this.currentOutfitItems.length 
+            });
+            
+            // Check if article is already in the outfit
+            const existingItem = this.currentOutfitItems.find(item => item.articleId === article.id);
+            if (existingItem) {
+                console.log('Article already in outfit, skipping:', article.id);
+                return;
+            }
+            
             const newItem = {
                 id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
                 articleId: article.id,
@@ -4570,13 +4595,17 @@ class LookbookApp {
                 y: Math.random() * 200 + 50
             };
             
+            console.log('Created outfit item:', newItem);
+            
             if (mode === 'edit') {
                 this.editingOutfitItems.push(newItem);
                 this.editingOutfitChanged = true;
                 this.renderEditOutfitItems();
             } else {
                 this.currentOutfitItems.push(newItem);
+                console.log('Outfit items after adding:', this.currentOutfitItems.length);
                 this.renderOutfitItems();
+                this.updateSaveButton();
             }
         } catch (error) {
             console.error('Error adding article to outfit:', error);
