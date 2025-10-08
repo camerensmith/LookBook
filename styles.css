@@ -79,10 +79,11 @@ body {
     to { transform: rotate(360deg); }
 }
 
-.header h1 {
-    color: #6366f1;
-    font-size: 1.5rem;
-    font-weight: 700;
+.wordmark-logo {
+    height: 1.5rem;
+    width: auto;
+    max-width: 200px;
+    object-fit: contain;
 }
 
 .menu-btn {
@@ -2108,8 +2109,9 @@ body {
         padding: 0.75rem;
     }
     
-    .header h1 {
-        font-size: 1.25rem;
+    .wordmark-logo {
+        height: 1.25rem;
+        max-width: 150px;
     }
     
     .main-content {
