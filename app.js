@@ -15,6 +15,10 @@ class LookbookApp {
         this.selectedTags = [];
         this.currentCollectionIcon = null;
         this.selectedOutfits = [];
+        this.selectedCategories = [];
+        this.editingOutfit = null;
+        this.editingOutfitItems = [];
+        this.editingOutfitChanged = false;
         this.cameraStream = null;
         this.capturedImage = null;
         this.processedImage = null;
@@ -539,6 +543,12 @@ class LookbookApp {
             
             // Outfit selection modal events
             this.bindOutfitSelectionEvents();
+            
+            // Category selection modal events
+            this.bindCategorySelectionEvents();
+            
+            // Edit outfit modal events
+            this.bindEditOutfitEvents();
 
             const clearOutfitBtn = document.getElementById('clearOutfitBtn');
             if (clearOutfitBtn) {
@@ -1341,7 +1351,13 @@ class LookbookApp {
                 this.tempArticleTags = tagsInput ? tagsInput.value.trim() : '';
                 
                 this.closeImageEditor();
-                this.showArticleForm();
+                
+                // If we have all the details, save the article directly
+                if (this.tempArticleName && this.processedImage) {
+                    this.saveArticleDirectly();
+                } else {
+                    this.showArticleForm();
+                }
             }
         } catch (error) {
             console.error('Error saving edited image:', error);
@@ -1379,6 +1395,38 @@ class LookbookApp {
         }
     }
 
+    saveArticleDirectly() {
+        try {
+            if (!this.tempArticleName || !this.processedImage) {
+                console.error('Missing article data for direct save');
+                this.showToast('Error: Missing article data', 'error');
+                return;
+            }
+            
+            const article = {
+                id: Date.now().toString(),
+                name: this.tempArticleName,
+                tags: this.tempArticleTags ? this.tempArticleTags.split(',').map(t => t.trim()) : [],
+                image: this.processedImage,
+                createdAt: new Date().toISOString()
+            };
+            
+            this.articles.push(article);
+            this.saveData();
+            this.resetArticleForm();
+            
+            // Clear temporary article details
+            this.tempArticleName = null;
+            this.tempArticleTags = null;
+            
+            console.log('Article saved directly:', article);
+            this.showToast('Article saved successfully!');
+        } catch (error) {
+            console.error('Error saving article directly:', error);
+            this.showToast('Error saving article. Please try again.', 'error');
+        }
+    }
+    
     saveArticle() {
         try {
             const nameInput = document.getElementById('articleName');
@@ -1395,7 +1443,7 @@ class LookbookApp {
             console.log('Saving article:', { name, tags });
             
             if (!name || !this.processedImage) {
-                alert('Please provide a name and image for the article');
+                this.showToast('Please provide a name and image for the article', 'error');
                 return;
             }
 
@@ -1784,6 +1832,36 @@ class LookbookApp {
         }
     }
     
+    deleteOutfit(outfitId) {
+        try {
+            const outfit = this.findOutfitById(outfitId);
+            if (!outfit) {
+                this.showToast('Outfit not found', 'error');
+                return;
+            }
+            
+            this.showDeleteConfirmation(
+                'outfit',
+                outfit.name,
+                () => {
+                    // Find and remove outfit from its category
+                    this.categories.forEach(category => {
+                        if (category.outfits) {
+                            category.outfits = category.outfits.filter(o => o.id !== outfitId);
+                        }
+                    });
+                    
+                    this.saveData();
+                    this.renderCreatedOutfits();
+                    this.showToast('Outfit deleted successfully!');
+                }
+            );
+        } catch (error) {
+            console.error('Error deleting outfit:', error);
+            this.showToast('Error deleting outfit. Please try again.', 'error');
+        }
+    }
+    
     deleteCategory(categoryId) {
         try {
             const category = this.categories.find(c => c.id === categoryId);
@@ -2125,21 +2203,8 @@ class LookbookApp {
                 return;
             }
             
-            // Create a simple selection dialog
-            const categoryNames = availableCategories.map(cat => cat.name);
-            const selectedName = prompt(`Available categories:\n${categoryNames.join('\n')}\n\nEnter the name of the category to add:`);
-            
-            if (selectedName) {
-                const category = availableCategories.find(cat => 
-                    cat.name.toLowerCase() === selectedName.toLowerCase()
-                );
-                
-                if (category) {
-                    this.addCategoryToCollection(category.id);
-                } else {
-                    this.showToast('Category not found. Please check the spelling.', 'error');
-                }
-            }
+            // Show category selection modal
+            this.showSelectCategoriesModal(availableCategories);
         } catch (error) {
             console.error('Error showing add category dialog:', error);
         }
@@ -2262,9 +2327,14 @@ class LookbookApp {
                     <h4 class="created-outfit-name">${this.escapeHtml(outfit.name)}</h4>
                 `;
                 
-                // Add click handler to edit outfit
-                outfitCard.addEventListener('click', () => {
-                    this.editOutfit(outfit.id);
+                // Add edit/delete buttons
+                this.addCardActionButtons(outfitCard, 'outfit', outfit.id);
+                
+                // Add click handler to edit outfit (only on the card itself, not buttons)
+                outfitCard.addEventListener('click', (e) => {
+                    if (!e.target.closest('.card-actions')) {
+                        this.editOutfit(outfit.id);
+                    }
                 });
                 
                 createdOutfitsList.appendChild(outfitCard);
@@ -2883,6 +2953,9 @@ class LookbookApp {
                 <h3>${this.escapeHtml(category.name)}</h3>
                 <div class="outfit-count">${outfitCount} outfit${outfitCount !== 1 ? 's' : ''}</div>
             `;
+            
+            // Add edit/delete buttons
+            this.addCardActionButtons(categoryElement, 'category', category.id);
             
             fragment.appendChild(categoryElement);
         }
@@ -3638,6 +3711,813 @@ class LookbookApp {
         }
     }
     
+    // Category Selection Modal Functionality
+    bindCategorySelectionEvents() {
+        try {
+            const selectAllCategoriesBtn = document.getElementById('selectAllCategoriesBtn');
+            const clearCategoriesSelectionBtn = document.getElementById('clearCategoriesSelectionBtn');
+            const acceptSelectedCategories = document.getElementById('acceptSelectedCategories');
+            const closeSelectCategoriesModal = document.getElementById('closeSelectCategoriesModal');
+            
+            if (selectAllCategoriesBtn) {
+                selectAllCategoriesBtn.addEventListener('click', () => this.selectAllCategories());
+            }
+            
+            if (clearCategoriesSelectionBtn) {
+                clearCategoriesSelectionBtn.addEventListener('click', () => this.clearCategorySelection());
+            }
+            
+            if (acceptSelectedCategories) {
+                acceptSelectedCategories.addEventListener('click', () => this.acceptSelectedCategories());
+            }
+            
+            if (closeSelectCategoriesModal) {
+                closeSelectCategoriesModal.addEventListener('click', () => this.closeSelectCategoriesModal());
+            }
+        } catch (error) {
+            console.error('Error binding category selection events:', error);
+        }
+    }
+    
+    showSelectCategoriesModal(availableCategories) {
+        try {
+            const modal = document.getElementById('selectCategoriesModal');
+            if (modal) {
+                this.selectedCategories = [];
+                this.availableCategories = availableCategories;
+                this.populateCategoriesSelection();
+                modal.classList.remove('hidden');
+                this.updateSelectedCategoriesCount();
+            }
+        } catch (error) {
+            console.error('Error showing select categories modal:', error);
+        }
+    }
+    
+    closeSelectCategoriesModal() {
+        try {
+            const modal = document.getElementById('selectCategoriesModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                this.selectedCategories = [];
+                this.availableCategories = null;
+            }
+        } catch (error) {
+            console.error('Error closing select categories modal:', error);
+        }
+    }
+    
+    populateCategoriesSelection() {
+        try {
+            const categoriesList = document.getElementById('categoriesSelectionList');
+            if (!categoriesList || !this.availableCategories) return;
+            
+            if (this.availableCategories.length === 0) {
+                categoriesList.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
+                        <div class="empty-icon">
+                            <span class="material-icons">folder_open</span>
+                        </div>
+                        <h3>No Categories Available</h3>
+                        <p>All categories are already in this collection</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            categoriesList.innerHTML = '';
+            
+            this.availableCategories.forEach(category => {
+                const categoryCard = document.createElement('div');
+                categoryCard.className = 'category-selection-card';
+                categoryCard.dataset.categoryId = category.id;
+                
+                const outfitCount = category.outfits ? category.outfits.length : 0;
+                const iconHtml = category.icon 
+                    ? `<img src="${category.icon}" alt="${this.escapeHtml(category.name)}">`
+                    : `<span class="material-icons">folder</span>`;
+                
+                categoryCard.innerHTML = `
+                    <input type="checkbox" class="category-selection-checkbox" data-category-id="${category.id}">
+                    <div class="category-selection-icon">
+                        ${iconHtml}
+                    </div>
+                    <div class="category-selection-name">${this.escapeHtml(category.name)}</div>
+                    <div class="category-selection-count">${outfitCount} outfit${outfitCount !== 1 ? 's' : ''}</div>
+                `;
+                
+                // Add click handler for card selection
+                categoryCard.addEventListener('click', (e) => {
+                    if (e.target.type !== 'checkbox') {
+                        const checkbox = categoryCard.querySelector('.category-selection-checkbox');
+                        checkbox.checked = !checkbox.checked;
+                        this.toggleCategorySelection(category.id, checkbox.checked);
+                    }
+                });
+                
+                // Add change handler for checkbox
+                const checkbox = categoryCard.querySelector('.category-selection-checkbox');
+                checkbox.addEventListener('change', (e) => {
+                    this.toggleCategorySelection(category.id, e.target.checked);
+                });
+                
+                categoriesList.appendChild(categoryCard);
+            });
+            
+            console.log('Categories selection populated:', this.availableCategories.length);
+        } catch (error) {
+            console.error('Error populating categories selection:', error);
+        }
+    }
+    
+    toggleCategorySelection(categoryId, isSelected) {
+        try {
+            if (isSelected) {
+                if (!this.selectedCategories.includes(categoryId)) {
+                    this.selectedCategories.push(categoryId);
+                }
+            } else {
+                this.selectedCategories = this.selectedCategories.filter(id => id !== categoryId);
+            }
+            
+            this.updateSelectedCategoriesCount();
+            this.updateCategoryCardSelection(categoryId, isSelected);
+        } catch (error) {
+            console.error('Error toggling category selection:', error);
+        }
+    }
+    
+    updateCategoryCardSelection(categoryId, isSelected) {
+        try {
+            const card = document.querySelector(`[data-category-id="${categoryId}"]`).closest('.category-selection-card');
+            if (card) {
+                if (isSelected) {
+                    card.classList.add('selected');
+                } else {
+                    card.classList.remove('selected');
+                }
+            }
+        } catch (error) {
+            console.error('Error updating category card selection:', error);
+        }
+    }
+    
+    updateSelectedCategoriesCount() {
+        try {
+            const countElement = document.getElementById('selectedCategoriesCount');
+            if (countElement) {
+                countElement.textContent = this.selectedCategories.length;
+            }
+        } catch (error) {
+            console.error('Error updating selected categories count:', error);
+        }
+    }
+    
+    selectAllCategories() {
+        try {
+            const checkboxes = document.querySelectorAll('.category-selection-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = true;
+                const categoryId = checkbox.dataset.categoryId;
+                if (!this.selectedCategories.includes(categoryId)) {
+                    this.selectedCategories.push(categoryId);
+                }
+                this.updateCategoryCardSelection(categoryId, true);
+            });
+            this.updateSelectedCategoriesCount();
+        } catch (error) {
+            console.error('Error selecting all categories:', error);
+        }
+    }
+    
+    clearCategorySelection() {
+        try {
+            const checkboxes = document.querySelectorAll('.category-selection-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+                const categoryId = checkbox.dataset.categoryId;
+                this.updateCategoryCardSelection(categoryId, false);
+            });
+            this.selectedCategories = [];
+            this.updateSelectedCategoriesCount();
+        } catch (error) {
+            console.error('Error clearing category selection:', error);
+        }
+    }
+    
+    acceptSelectedCategories() {
+        try {
+            if (this.selectedCategories.length === 0) {
+                this.showToast('Please select at least one category', 'error');
+                return;
+            }
+            
+            // Add selected categories to collection
+            this.selectedCategories.forEach(categoryId => {
+                this.addCategoryToCollection(categoryId);
+            });
+            
+            this.closeSelectCategoriesModal();
+            this.showToast(`${this.selectedCategories.length} categor${this.selectedCategories.length !== 1 ? 'ies' : 'y'} added successfully!`);
+        } catch (error) {
+            console.error('Error accepting selected categories:', error);
+            this.showToast('Error adding categories. Please try again.', 'error');
+        }
+    }
+    
+    // Edit/Delete Functionality for Cards
+    addCardActionButtons(card, type, id) {
+        try {
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'card-actions';
+            
+            const editBtn = document.createElement('button');
+            editBtn.className = 'card-action-btn edit';
+            editBtn.innerHTML = '<span class="material-icons">edit</span>';
+            editBtn.title = 'Edit';
+            editBtn.onclick = (e) => {
+                e.stopPropagation();
+                this.editCard(type, id);
+            };
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'card-action-btn delete';
+            deleteBtn.innerHTML = '<span class="material-icons">delete</span>';
+            deleteBtn.title = 'Delete';
+            deleteBtn.onclick = (e) => {
+                e.stopPropagation();
+                this.deleteCard(type, id);
+            };
+            
+            actionsDiv.appendChild(editBtn);
+            actionsDiv.appendChild(deleteBtn);
+            card.appendChild(actionsDiv);
+        } catch (error) {
+            console.error('Error adding card action buttons:', error);
+        }
+    }
+    
+    editCard(type, id) {
+        try {
+            switch (type) {
+                case 'category':
+                    this.editCategory(id);
+                    break;
+                case 'collection':
+                    this.editCollection(id);
+                    break;
+                case 'article':
+                    this.editArticle(id);
+                    break;
+                case 'outfit':
+                    this.editOutfit(id);
+                    break;
+                default:
+                    console.error('Unknown card type:', type);
+            }
+        } catch (error) {
+            console.error('Error editing card:', error);
+        }
+    }
+    
+    deleteCard(type, id) {
+        try {
+            switch (type) {
+                case 'category':
+                    this.deleteCategory(id);
+                    break;
+                case 'collection':
+                    this.deleteCollection(id);
+                    break;
+                case 'article':
+                    this.deleteArticle(id);
+                    break;
+                case 'outfit':
+                    this.deleteOutfit(id);
+                    break;
+                default:
+                    console.error('Unknown card type:', type);
+            }
+        } catch (error) {
+            console.error('Error deleting card:', error);
+        }
+    }
+    
+    editCategory(categoryId) {
+        try {
+            const category = this.categories.find(c => c.id === categoryId);
+            if (!category) {
+                this.showToast('Category not found', 'error');
+                return;
+            }
+            
+            const newName = prompt('Enter new category name:', category.name);
+            if (newName && newName.trim() !== category.name) {
+                category.name = newName.trim();
+                this.saveData();
+                this.renderCategories();
+                this.showToast('Category updated successfully!');
+            }
+        } catch (error) {
+            console.error('Error editing category:', error);
+            this.showToast('Error updating category. Please try again.', 'error');
+        }
+    }
+    
+    editCollection(collectionId) {
+        try {
+            const collection = this.collections.find(c => c.id === collectionId);
+            if (!collection) {
+                this.showToast('Collection not found', 'error');
+                return;
+            }
+            
+            const newName = prompt('Enter new collection name:', collection.name);
+            if (newName && newName.trim() !== collection.name) {
+                collection.name = newName.trim();
+                this.saveData();
+                this.renderCollections();
+                this.showToast('Collection updated successfully!');
+            }
+        } catch (error) {
+            console.error('Error editing collection:', error);
+            this.showToast('Error updating collection. Please try again.', 'error');
+        }
+    }
+    
+    editArticle(articleId) {
+        try {
+            const article = this.articles.find(a => a.id === articleId);
+            if (!article) {
+                this.showToast('Article not found', 'error');
+                return;
+            }
+            
+            const newName = prompt('Enter new article name:', article.name);
+            if (newName && newName.trim() !== article.name) {
+                article.name = newName.trim();
+                this.saveData();
+                this.renderArticles();
+                this.renderArticlesGrid();
+                this.showToast('Article updated successfully!');
+            }
+        } catch (error) {
+            console.error('Error editing article:', error);
+            this.showToast('Error updating article. Please try again.', 'error');
+        }
+    }
+    
+    // Edit Outfit Modal Functionality
+    bindEditOutfitEvents() {
+        try {
+            const closeEditOutfitModal = document.getElementById('closeEditOutfitModal');
+            const saveEditOutfitBtn = document.getElementById('saveEditOutfitBtn');
+            const clearEditOutfitBtn = document.getElementById('clearEditOutfitBtn');
+            const editOutfitSearch = document.getElementById('editOutfitSearch');
+            const editOutfitTagSearchInput = document.getElementById('editOutfitTagSearchInput');
+            
+            if (closeEditOutfitModal) {
+                closeEditOutfitModal.addEventListener('click', () => this.closeEditOutfitModal());
+            }
+            
+            if (saveEditOutfitBtn) {
+                saveEditOutfitBtn.addEventListener('click', () => this.saveEditOutfit());
+            }
+            
+            if (clearEditOutfitBtn) {
+                clearEditOutfitBtn.addEventListener('click', () => this.clearEditOutfit());
+            }
+            
+            if (editOutfitSearch) {
+                editOutfitSearch.addEventListener('input', () => this.filterEditOutfitArticles());
+            }
+            
+            if (editOutfitTagSearchInput) {
+                editOutfitTagSearchInput.addEventListener('click', () => this.toggleEditOutfitTagSearch());
+            }
+            
+            // Bind tag search events for edit outfit
+            this.bindEditOutfitTagSearchEvents();
+        } catch (error) {
+            console.error('Error binding edit outfit events:', error);
+        }
+    }
+    
+    bindEditOutfitTagSearchEvents() {
+        try {
+            const editOutfitTagSearchDropdown = document.getElementById('editOutfitTagSearchDropdown');
+            
+            if (editOutfitTagSearchDropdown) {
+                editOutfitTagSearchDropdown.addEventListener('click', (e) => e.stopPropagation());
+            }
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', () => {
+                this.closeEditOutfitTagSearch();
+            });
+        } catch (error) {
+            console.error('Error binding edit outfit tag search events:', error);
+        }
+    }
+    
+    editOutfit(outfitId) {
+        try {
+            const outfit = this.findOutfitById(outfitId);
+            if (!outfit) {
+                this.showToast('Outfit not found', 'error');
+                return;
+            }
+            
+            this.editingOutfit = outfit;
+            this.editingOutfitItems = [...outfit.items];
+            this.editingOutfitChanged = false;
+            
+            this.showEditOutfitModal();
+        } catch (error) {
+            console.error('Error editing outfit:', error);
+            this.showToast('Error opening outfit editor. Please try again.', 'error');
+        }
+    }
+    
+    showEditOutfitModal() {
+        try {
+            const modal = document.getElementById('editOutfitModal');
+            const title = document.getElementById('editOutfitTitle');
+            
+            if (modal && title) {
+                title.textContent = `Editing Outfit: ${this.editingOutfit.name}`;
+                modal.classList.remove('hidden');
+                this.populateEditOutfitArticles();
+                this.renderEditOutfitItems();
+            }
+        } catch (error) {
+            console.error('Error showing edit outfit modal:', error);
+        }
+    }
+    
+    closeEditOutfitModal() {
+        try {
+            if (this.editingOutfitChanged) {
+                const saveChanges = confirm('Do you want to save changes?');
+                if (saveChanges) {
+                    this.saveEditOutfit();
+                    return;
+                }
+            }
+            
+            const modal = document.getElementById('editOutfitModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                this.editingOutfit = null;
+                this.editingOutfitItems = [];
+                this.editingOutfitChanged = false;
+            }
+        } catch (error) {
+            console.error('Error closing edit outfit modal:', error);
+        }
+    }
+    
+    populateEditOutfitArticles() {
+        try {
+            const articlesList = document.getElementById('editOutfitArticlesList');
+            if (!articlesList) return;
+            
+            articlesList.innerHTML = '';
+            
+            this.articles.forEach(article => {
+                const articleItem = document.createElement('div');
+                articleItem.className = 'article-item';
+                articleItem.dataset.articleId = article.id;
+                
+                // Check if article is already in the outfit
+                const isInOutfit = this.editingOutfitItems.some(item => item.articleId === article.id);
+                if (isInOutfit) {
+                    articleItem.classList.add('highlighted');
+                }
+                
+                const imageSrc = article.processedImage || article.image || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik00MCA0MEg2MFY2MEg0MFY0MFoiIGZpbGw9IiM5OUEzQUYiLz4KPC9zdmc+';
+                
+                articleItem.innerHTML = `
+                    <img src="${imageSrc}" alt="${this.escapeHtml(article.name)}" class="article-thumbnail">
+                    <div class="article-name">${this.escapeHtml(article.name)}</div>
+                    <div class="article-tags">${this.escapeHtml(article.tags || '')}</div>
+                `;
+                
+                // Add drag functionality
+                this.makeArticleDraggable(articleItem, article, 'edit');
+                
+                articlesList.appendChild(articleItem);
+            });
+        } catch (error) {
+            console.error('Error populating edit outfit articles:', error);
+        }
+    }
+    
+    renderEditOutfitItems() {
+        try {
+            const canvas = document.getElementById('editOutfitCanvas');
+            if (!canvas) return;
+            
+            if (this.editingOutfitItems.length === 0) {
+                canvas.innerHTML = '<p class="placeholder-text">Drag articles here to build your outfit</p>';
+                return;
+            }
+            
+            canvas.innerHTML = '';
+            
+            this.editingOutfitItems.forEach(item => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'outfit-item';
+                itemElement.style.left = item.x + 'px';
+                itemElement.style.top = item.y + 'px';
+                itemElement.dataset.itemId = item.id;
+                
+                const imageSrc = item.image || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik00MCA0MEg2MFY2MEg0MFY0MFoiIGZpbGw9IiM5OUEzQUYiLz4KPC9zdmc+';
+                
+                itemElement.innerHTML = `
+                    <img src="${imageSrc}" alt="${this.escapeHtml(item.name)}" class="outfit-item-image">
+                    <div class="outfit-item-name">${this.escapeHtml(item.name)}</div>
+                    <button class="remove-item-btn" onclick="window.app.removeEditOutfitItem('${item.id}')">
+                        <span class="material-icons">close</span>
+                    </button>
+                `;
+                
+                // Add drag functionality
+                this.makeOutfitItemDraggable(itemElement, item, 'edit');
+                
+                canvas.appendChild(itemElement);
+            });
+        } catch (error) {
+            console.error('Error rendering edit outfit items:', error);
+        }
+    }
+    
+    makeArticleDraggable(element, article, mode = 'normal') {
+        try {
+            let isDragging = false;
+            let startX, startY, initialX, initialY;
+            
+            const handleStart = (e) => {
+                isDragging = true;
+                const rect = element.getBoundingClientRect();
+                startX = e.clientX || e.touches[0].clientX;
+                startY = e.clientY || e.touches[0].clientY;
+                initialX = rect.left;
+                initialY = rect.top;
+                
+                element.style.zIndex = '1000';
+                element.style.opacity = '0.8';
+                element.style.transform = 'scale(1.05)';
+                
+                e.preventDefault();
+            };
+            
+            const handleMove = (e) => {
+                if (!isDragging) return;
+                
+                const currentX = e.clientX || e.touches[0].clientX;
+                const currentY = e.clientY || e.touches[0].clientY;
+                
+                const deltaX = currentX - startX;
+                const deltaY = currentY - startY;
+                
+                element.style.left = (initialX + deltaX) + 'px';
+                element.style.top = (initialY + deltaY) + 'px';
+                
+                e.preventDefault();
+            };
+            
+            const handleEnd = (e) => {
+                if (!isDragging) return;
+                isDragging = false;
+                
+                element.style.zIndex = '';
+                element.style.opacity = '';
+                element.style.transform = '';
+                
+                // Check if dropped on outfit canvas
+                const canvas = document.getElementById(mode === 'edit' ? 'editOutfitCanvas' : 'outfitCanvas');
+                if (canvas) {
+                    const canvasRect = canvas.getBoundingClientRect();
+                    const elementRect = element.getBoundingClientRect();
+                    
+                    if (elementRect.left < canvasRect.right &&
+                        elementRect.right > canvasRect.left &&
+                        elementRect.top < canvasRect.bottom &&
+                        elementRect.bottom > canvasRect.top) {
+                        
+                        // Add to outfit
+                        this.addArticleToOutfit(article, mode);
+                        
+                        // Highlight the article
+                        element.classList.add('highlighted');
+                    } else {
+                        // Return to original position
+                        element.style.left = '';
+                        element.style.top = '';
+                    }
+                }
+                
+                e.preventDefault();
+            };
+            
+            // Mouse events
+            element.addEventListener('mousedown', handleStart);
+            document.addEventListener('mousemove', handleMove);
+            document.addEventListener('mouseup', handleEnd);
+            
+            // Touch events
+            element.addEventListener('touchstart', handleStart, { passive: false });
+            document.addEventListener('touchmove', handleMove, { passive: false });
+            document.addEventListener('touchend', handleEnd, { passive: false });
+        } catch (error) {
+            console.error('Error making article draggable:', error);
+        }
+    }
+    
+    addArticleToOutfit(article, mode = 'normal') {
+        try {
+            const newItem = {
+                id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                articleId: article.id,
+                name: article.name,
+                image: article.processedImage || article.image,
+                x: Math.random() * 200 + 50, // Random position
+                y: Math.random() * 200 + 50
+            };
+            
+            if (mode === 'edit') {
+                this.editingOutfitItems.push(newItem);
+                this.editingOutfitChanged = true;
+                this.renderEditOutfitItems();
+            } else {
+                this.currentOutfitItems.push(newItem);
+                this.renderOutfitItems();
+            }
+        } catch (error) {
+            console.error('Error adding article to outfit:', error);
+        }
+    }
+    
+    removeEditOutfitItem(itemId) {
+        try {
+            this.editingOutfitItems = this.editingOutfitItems.filter(item => item.id !== itemId);
+            this.editingOutfitChanged = true;
+            this.renderEditOutfitItems();
+            this.populateEditOutfitArticles(); // Update highlights
+        } catch (error) {
+            console.error('Error removing edit outfit item:', error);
+        }
+    }
+    
+    clearEditOutfit() {
+        try {
+            this.editingOutfitItems = [];
+            this.editingOutfitChanged = true;
+            this.renderEditOutfitItems();
+            this.populateEditOutfitArticles(); // Update highlights
+        } catch (error) {
+            console.error('Error clearing edit outfit:', error);
+        }
+    }
+    
+    async saveEditOutfit() {
+        try {
+            if (!this.editingOutfit) return;
+            
+            // Update the outfit
+            this.editingOutfit.items = [...this.editingOutfitItems];
+            this.editingOutfit.previewImage = await this.generateOutfitPreview(this.editingOutfitItems);
+            
+            this.saveData();
+            this.closeEditOutfitModal();
+            this.showToast('Outfit updated successfully!');
+            
+            // Refresh the current view
+            if (this.currentView === 'addOutfit') {
+                this.renderCreatedOutfits();
+            }
+        } catch (error) {
+            console.error('Error saving edit outfit:', error);
+            this.showToast('Error updating outfit. Please try again.', 'error');
+        }
+    }
+    
+    toggleEditOutfitTagSearch() {
+        try {
+            const dropdown = document.getElementById('editOutfitTagSearchDropdown');
+            if (dropdown) {
+                dropdown.classList.toggle('hidden');
+                if (!dropdown.classList.contains('hidden')) {
+                    this.populateEditOutfitTagSearchOptions();
+                }
+            }
+        } catch (error) {
+            console.error('Error toggling edit outfit tag search:', error);
+        }
+    }
+    
+    closeEditOutfitTagSearch() {
+        try {
+            const dropdown = document.getElementById('editOutfitTagSearchDropdown');
+            if (dropdown) {
+                dropdown.classList.add('hidden');
+            }
+        } catch (error) {
+            console.error('Error closing edit outfit tag search:', error);
+        }
+    }
+    
+    populateEditOutfitTagSearchOptions() {
+        try {
+            const tagSearchOptions = document.getElementById('editOutfitTagSearchOptions');
+            if (!tagSearchOptions) return;
+            
+            // Get all unique tags from articles
+            const allTags = new Set();
+            this.articles.forEach(article => {
+                if (article.tags) {
+                    let tags = [];
+                    if (Array.isArray(article.tags)) {
+                        tags = article.tags.map(tag => tag.trim().toLowerCase());
+                    } else if (typeof article.tags === 'string') {
+                        tags = article.tags.split(',').map(tag => tag.trim().toLowerCase());
+                    }
+                    tags.forEach(tag => {
+                        if (tag) allTags.add(tag);
+                    });
+                }
+            });
+            
+            tagSearchOptions.innerHTML = '';
+            
+            if (allTags.size === 0) {
+                tagSearchOptions.innerHTML = '<div class="tag-search-option">No tags available</div>';
+                return;
+            }
+            
+            Array.from(allTags).sort().forEach(tag => {
+                const option = document.createElement('div');
+                option.className = 'tag-search-option';
+                
+                option.innerHTML = `
+                    <input type="checkbox" id="edit-tag-${tag}" value="${tag}">
+                    <label for="edit-tag-${tag}">${tag}</label>
+                `;
+                
+                const checkbox = option.querySelector('input[type="checkbox"]');
+                checkbox.addEventListener('change', () => {
+                    this.filterEditOutfitArticles();
+                });
+                
+                tagSearchOptions.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error populating edit outfit tag search options:', error);
+        }
+    }
+    
+    filterEditOutfitArticles() {
+        try {
+            const searchTerm = document.getElementById('editOutfitSearch').value.toLowerCase();
+            const selectedTags = Array.from(document.querySelectorAll('#editOutfitTagSearchOptions input[type="checkbox"]:checked'))
+                .map(cb => cb.value);
+            
+            const articlesList = document.getElementById('editOutfitArticlesList');
+            if (!articlesList) return;
+            
+            const articles = articlesList.querySelectorAll('.article-item');
+            
+            articles.forEach(articleElement => {
+                const articleId = articleElement.dataset.articleId;
+                const article = this.articles.find(a => a.id === articleId);
+                
+                if (!article) return;
+                
+                const matchesSearch = !searchTerm || 
+                    article.name.toLowerCase().includes(searchTerm) ||
+                    (article.tags && article.tags.toLowerCase().includes(searchTerm));
+                
+                const matchesTags = selectedTags.length === 0 || 
+                    (article.tags && selectedTags.some(selectedTag => {
+                        if (Array.isArray(article.tags)) {
+                            return article.tags.some(tag => tag.toLowerCase().includes(selectedTag.toLowerCase()));
+                        } else {
+                            return article.tags.toLowerCase().includes(selectedTag.toLowerCase());
+                        }
+                    }));
+                
+                if (matchesSearch && matchesTags) {
+                    articleElement.style.display = 'block';
+                } else {
+                    articleElement.style.display = 'none';
+                }
+            });
+        } catch (error) {
+            console.error('Error filtering edit outfit articles:', error);
+        }
+    }
+    
     async saveOutfitFromModal() {
         try {
             const nameInput = document.getElementById('modalOutfitName');
@@ -3656,10 +4536,7 @@ class LookbookApp {
                 return;
             }
             
-            if (!categoryId) {
-                this.showToast('Please select a category for your outfit', 'error');
-                return;
-            }
+            // Category is now optional
             
             if (this.currentOutfitItems.length === 0) {
                 this.showToast('Please add some articles to your outfit first!', 'error');
@@ -3679,14 +4556,29 @@ class LookbookApp {
             const previewImage = await this.generateOutfitPreview();
             outfit.previewImage = previewImage;
             
-            // Save outfit to selected category
-            const category = this.categories.find(c => c.id === categoryId);
-            if (category) {
-                if (!category.outfits) category.outfits = [];
-                category.outfits.push(outfit);
+            // Save outfit to selected category or create "My Outfits" category
+            if (categoryId) {
+                const category = this.categories.find(c => c.id === categoryId);
+                if (category) {
+                    if (!category.outfits) category.outfits = [];
+                    category.outfits.push(outfit);
+                } else {
+                    this.showToast('Selected category not found', 'error');
+                    return;
+                }
             } else {
-                this.showToast('Selected category not found', 'error');
-                return;
+                // Add to "My Outfits" (uncategorized)
+                let myOutfitsCategory = this.categories.find(c => c.name === 'My Outfits');
+                if (!myOutfitsCategory) {
+                    myOutfitsCategory = {
+                        id: 'my-outfits',
+                        name: 'My Outfits',
+                        outfits: [],
+                        createdAt: new Date().toISOString()
+                    };
+                    this.categories.push(myOutfitsCategory);
+                }
+                myOutfitsCategory.outfits.push(outfit);
             }
             
             // Save data and clear outfit

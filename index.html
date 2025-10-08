@@ -351,8 +351,8 @@
                     </div>
                     <form id="saveOutfitForm" class="form">
                         <input type="text" id="modalOutfitName" placeholder="Outfit Name" required>
-                        <select id="modalOutfitCategory" required>
-                            <option value="">Select Category</option>
+                        <select id="modalOutfitCategory">
+                            <option value="">Select Category (Optional)</option>
                         </select>
                         <div class="modal-actions">
                             <button type="button" class="btn-secondary" onclick="window.app.closeSaveOutfitModal()">Cancel</button>
@@ -388,6 +388,88 @@
                     <div class="modal-actions">
                         <button type="button" class="btn-secondary" onclick="window.app.closeSelectOutfitsModal()">Cancel</button>
                         <button type="button" class="btn-primary" id="acceptSelectedOutfits">Accept</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Select Categories Modal -->
+            <div id="selectCategoriesModal" class="modal hidden">
+                <div class="modal-content select-categories-modal">
+                    <div class="modal-header">
+                        <h3>Add Categories to Collection</h3>
+                        <button id="closeSelectCategoriesModal" class="close-btn">
+                            <span class="material-icons">close</span>
+                        </button>
+                    </div>
+                    <div class="categories-selection-container">
+                        <div class="categories-selection-header">
+                            <div class="selection-info">
+                                <span id="selectedCategoriesCount">0</span> categories selected
+                            </div>
+                            <div class="selection-actions">
+                                <button id="selectAllCategoriesBtn" class="btn-secondary">Select All</button>
+                                <button id="clearCategoriesSelectionBtn" class="btn-secondary">Clear All</button>
+                            </div>
+                        </div>
+                        <div id="categoriesSelectionList" class="categories-selection-list">
+                            <!-- Categories will be populated here -->
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="window.app.closeSelectCategoriesModal()">Cancel</button>
+                        <button type="button" class="btn-primary" id="acceptSelectedCategories">Add Categories</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit Outfit Modal -->
+            <div id="editOutfitModal" class="modal hidden">
+                <div class="modal-content edit-outfit-modal">
+                    <div class="modal-header">
+                        <h3 id="editOutfitTitle">Editing Outfit</h3>
+                        <button id="closeEditOutfitModal" class="close-btn">
+                            <span class="material-icons">close</span>
+                        </button>
+                    </div>
+                    <div class="edit-outfit-content">
+                        <!-- Search and Filter Section -->
+                        <div class="search-section">
+                            <input type="text" id="editOutfitSearch" placeholder="Search articles..." class="search-input">
+                            <div class="tag-search-container">
+                                <div class="tag-search-input" id="editOutfitTagSearchInput">
+                                    <span class="tag-search-placeholder">Select tags to filter...</span>
+                                    <span class="tag-search-arrow">▼</span>
+                                </div>
+                                <div class="tag-search-dropdown hidden" id="editOutfitTagSearchDropdown">
+                                    <div class="tag-search-options" id="editOutfitTagSearchOptions">
+                                        <!-- Tag options will be populated here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Articles Grid -->
+                        <div class="articles-section">
+                            <h4>Available Articles</h4>
+                            <div id="editOutfitArticlesList" class="articles-list">
+                                <!-- Articles will be populated here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Current Outfit -->
+                        <div class="outfit-section">
+                            <div class="outfit-header">
+                                <h4>Current Outfit</h4>
+                                <button id="clearEditOutfitBtn" class="btn-secondary">Clear All</button>
+                            </div>
+                            <div id="editOutfitCanvas" class="outfit-canvas-area">
+                                <p class="placeholder-text">Drag articles here to build your outfit</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="window.app.closeEditOutfitModal()">Cancel</button>
+                        <button type="button" class="btn-primary" id="saveEditOutfitBtn">Done</button>
                     </div>
                 </div>
             </div>
