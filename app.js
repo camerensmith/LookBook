@@ -2598,20 +2598,28 @@ class LookbookApp {
         try {
             if (!this.draggedElement) return;
             
-            // Check if we're over the outfit canvas
+            // Determine drop target: slot grid or free canvas
             const outfitCanvas = document.getElementById('outfitCanvas');
+            const slotGrid = document.getElementById('slotGrid');
             let droppedOnCanvas = false;
+            let droppedOnSlots = false;
             
             if (outfitCanvas) {
                 const canvasRect = outfitCanvas.getBoundingClientRect();
                 droppedOnCanvas = touch.clientX >= canvasRect.left && 
-                                touch.clientX <= canvasRect.right &&
-                                touch.clientY >= canvasRect.top && 
-                                touch.clientY <= canvasRect.bottom;
-                
+                                  touch.clientX <= canvasRect.right &&
+                                  touch.clientY >= canvasRect.top && 
+                                  touch.clientY <= canvasRect.bottom;
                 // Reset canvas styling
                 outfitCanvas.style.borderColor = '#6366f1';
                 outfitCanvas.style.backgroundColor = 'transparent';
+            }
+            if (!droppedOnCanvas && slotGrid) {
+                const gridRect = slotGrid.getBoundingClientRect();
+                droppedOnSlots = touch.clientX >= gridRect.left &&
+                                 touch.clientX <= gridRect.right &&
+                                 touch.clientY >= gridRect.top &&
+                                 touch.clientY <= gridRect.bottom;
             }
             
             if (droppedOnCanvas) {
@@ -2621,7 +2629,6 @@ class LookbookApp {
                 const y = touch.clientY - canvasRect.top;
                 
                 // If slot grid exists, assign to nearest slot, else add freely
-                const slotGrid = document.getElementById('slotGrid');
                 const articleId = this.draggedElement.dataset.articleId;
                 const article = this.articles.find(a => a.id === articleId);
                 if (slotGrid && article) {
@@ -2642,6 +2649,23 @@ class LookbookApp {
                     }
                 } else if (article) {
                     this.addArticleToOutfit(article, 'normal');
+                }
+            } else if (droppedOnSlots && slotGrid) {
+                // Dropped directly on slot grid (no canvas present)
+                const articleId = this.draggedElement.dataset.articleId;
+                const article = this.articles.find(a => a.id === articleId);
+                if (article) {
+                    const slots = Array.from(slotGrid.querySelectorAll('.slot'));
+                    const target = slots.find(s => {
+                        const r = s.getBoundingClientRect();
+                        return touch.clientX >= r.left && touch.clientX <= r.right && touch.clientY >= r.top && touch.clientY <= r.bottom;
+                    });
+                    if (target) {
+                        const key = target.dataset.slot;
+                        this.currentOutfitSlots[key] = { articleId: article.id, name: article.name, image: article.processedImage || article.image, article };
+                        this.renderSlots();
+                        this.updateSaveButton();
+                    }
                 }
             }
             
