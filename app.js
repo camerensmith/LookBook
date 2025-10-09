@@ -566,11 +566,29 @@ class LookbookApp {
                 });
             }
 
-            const addExistingOutfitsBtn = document.getElementById('addExistingOutfitsBtn');
-            if (addExistingOutfitsBtn) {
-                addExistingOutfitsBtn.addEventListener('click', () => {
-                    console.log('Add existing outfits button clicked');
+            const editOutfitPickerBtn = document.getElementById('editOutfitPickerBtn');
+            if (editOutfitPickerBtn) {
+                editOutfitPickerBtn.addEventListener('click', () => {
+                    console.log('Edit outfit picker clicked');
+                    // Reuse outfits selection modal to pick one outfit to edit
                     this.showSelectOutfitsModal();
+                    // When accepting, if exactly one selected, open edit modal for it
+                    const acceptBtn = document.getElementById('acceptSelectedOutfits');
+                    if (acceptBtn) {
+                        const handler = () => {
+                            if (this.selectedOutfits && this.selectedOutfits.length === 1) {
+                                const outfitId = this.selectedOutfits[0];
+                                this.closeSelectOutfitsModal();
+                                this.editOutfit(outfitId);
+                            } else if (this.selectedOutfits && this.selectedOutfits.length > 1) {
+                                this.showToast('Select only one outfit to edit', 'info');
+                            } else {
+                                this.showToast('Select an outfit to edit', 'error');
+                            }
+                            acceptBtn.removeEventListener('click', handler);
+                        };
+                        acceptBtn.addEventListener('click', handler);
+                    }
                 });
             }
 
@@ -790,13 +808,13 @@ class LookbookApp {
                 case 'addOutfit':
                     this.renderArticles();
                     this.populateTagFilters();
-                    this.renderCreatedOutfits();
                     break;
                 case 'addArticle':
                     this.resetArticleForm();
                     break;
                 case 'viewArticles':
                     this.renderArticlesGrid();
+                    this.renderCreatedOutfits();
                     break;
                 case 'collections':
                     this.renderCollections();
@@ -897,13 +915,13 @@ class LookbookApp {
                 case 'addOutfit':
                     this.renderArticles();
                     this.populateTagFilters();
-                    this.renderCreatedOutfits();
                     break;
                 case 'addArticle':
                     this.resetArticleForm();
                     break;
                 case 'viewArticles':
                     this.renderArticlesGrid();
+                    this.renderCreatedOutfits();
                     break;
                 case 'collections':
                     this.renderCollections();
@@ -1536,9 +1554,12 @@ class LookbookApp {
             
             // Filter articles
             const filteredArticles = this.articles.filter(article => {
-                const matchesSearch = !searchTerm || 
-                    article.name.toLowerCase().includes(searchTerm) ||
-                    (article.tags && article.tags.toLowerCase().includes(searchTerm));
+                const tagsNormalized = Array.isArray(article.tags)
+                    ? article.tags.map(t => (t || '').toString().toLowerCase()).join(',')
+                    : ((article.tags || '').toString().toLowerCase());
+                const matchesSearch = !searchTerm ||
+                    (article.name && article.name.toLowerCase().includes(searchTerm)) ||
+                    (tagsNormalized && tagsNormalized.includes(searchTerm));
                 
                 // Check if article matches any of the selected tags
                 const matchesSelectedTags = this.selectedTags.length === 0 || 
@@ -1966,7 +1987,7 @@ class LookbookApp {
                             <span class="material-icons">collections</span>
                         </div>
                         <h3>No Collections Yet</h3>
-                        <p>Create your first collection to organize your categories!</p>
+                        <p>Collections group your categories.</p>
                         <button class="btn-primary" onclick="window.app.showCreateCollectionForm()">
                             <span class="material-icons">add</span>
                             <span>Create Collection</span>
@@ -3344,7 +3365,7 @@ class LookbookApp {
                             <span class="material-icons">folder_open</span>
                         </div>
                         <h3>No Categories Yet</h3>
-                        <p>Create your first category to organize your outfits!</p>
+                        <p>Categories group your outfits.</p>
                         <p>Use the "Create Category" button above to get started.</p>
                     </div>
                 `;
@@ -3488,7 +3509,7 @@ class LookbookApp {
                             <span class="material-icons">inventory_2</span>
                         </div>
                         <h3>No Articles Yet</h3>
-                        <p>Add your first article to start building outfits!</p>
+                        <p>Add your first article of clothing to start building outfits!</p>
                         <button class="btn-primary" onclick="window.app.navigateTo('add-article')">
                             <span class="material-icons">add</span>
                             <span>Add Article</span>

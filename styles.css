@@ -2509,6 +2509,19 @@ body {
     background: linear-gradient(135deg, #1565c0, #0d47a1);
 }
 
+.mui-btn .material-icons {
+    font-size: 20px;
+}
+
+/* Faint MUI-like divider in the nav */
+.mui-divider {
+    width: 1px;
+    height: 28px;
+    background: rgba(0,0,0,0.12);
+    margin: 0 8px;
+    align-self: center;
+}
+
 .menu-btn.mui-btn {
     background: rgba(255, 255, 255, 0.1);
     color: #6366f1;

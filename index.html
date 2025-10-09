@@ -47,6 +47,10 @@
 
         <!-- Main Navigation -->
         <nav id="mainNav" class="main-nav">
+            <button class="nav-btn mui-btn" data-action="view-articles">
+                <span class="material-icons">inventory</span>
+                <span>Closet</span>
+            </button>
             <button class="nav-btn mui-btn" data-action="collections">
                 <span class="material-icons">collections</span>
                 <span>Collections</span>
@@ -55,17 +59,14 @@
                 <span class="material-icons">folder</span>
                 <span>Categories</span>
             </button>
-                    <button class="nav-btn mui-btn" data-action="add-outfit">
-                        <span class="material-icons">checkroom</span>
-                        <span>Add/View Outfits</span>
-                    </button>
+            <button class="nav-btn mui-btn" data-action="add-outfit">
+                <span class="material-icons">checkroom</span>
+                <span>Create Outfit</span>
+            </button>
+            <span class="mui-divider" aria-hidden="true"></span>
             <button class="nav-btn mui-btn" data-action="add-article">
                 <span class="material-icons">add_a_photo</span>
                 <span>Add Article</span>
-            </button>
-            <button class="nav-btn mui-btn" data-action="view-articles">
-                <span class="material-icons">inventory</span>
-                <span>Closet</span>
             </button>
         </nav>
 
@@ -177,9 +178,9 @@
                         <div class="outfit-header">
                             <h3>Your Outfit</h3>
                             <div class="outfit-header-actions">
-                                <button id="addExistingOutfitsBtn" class="btn-secondary">
-                                    <span class="material-icons">add_box</span>
-                                    <span>+Add Outfit</span>
+                                <button id="editOutfitPickerBtn" class="btn-secondary">
+                                    <span class="material-icons">edit</span>
+                                    <span>Edit Outfit</span>
                                 </button>
                                 <button id="clearOutfitBtn" class="btn-secondary">Clear All</button>
                             </div>
@@ -216,13 +217,7 @@
                     </div>
                 </div>
                 
-                <!-- Created Outfits Section -->
-                <div class="created-outfits-section">
-                    <h3>Your Saved Outfits</h3>
-                    <div id="createdOutfitsList" class="created-outfits-list">
-                        <!-- Created outfits will be populated here -->
-                    </div>
-                </div>
+                
                 
                         <form id="outfitForm" class="form hidden">
                             <input type="text" id="outfitName" placeholder="Outfit Name" required>
@@ -278,6 +273,12 @@
                 </div>
                 <div id="articlesGrid" class="articles-grid">
                     <!-- Articles will be populated here -->
+                </div>
+                <div class="created-outfits-section">
+                    <h3>Hangers</h3>
+                    <div id="createdOutfitsList" class="created-outfits-list">
+                        <!-- Created outfits will be populated here -->
+                    </div>
                 </div>
                 <button class="btn-secondary back-btn" data-back="categories">Back</button>
             </div>
