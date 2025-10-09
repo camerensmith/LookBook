@@ -5176,6 +5176,8 @@ class LookbookApp {
                 const category = this.categories.find(c => c.id === categoryId);
                 if (category) {
                     if (!category.outfits) category.outfits = [];
+                    // Set the categoryId on the outfit for consistency
+                    outfit.categoryId = categoryId;
                     category.outfits.push(outfit);
                 } else {
                     this.showToast('Selected category not found', 'error');
@@ -5246,9 +5248,19 @@ class LookbookApp {
         try {
             categoryOutfits.innerHTML = '';
             
+            console.log('Rendering category outfits for:', category.name, {
+                categoryId: category.id,
+                hasCategoryOutfits: !!(category.outfits && Array.isArray(category.outfits)),
+                categoryOutfitsCount: category.outfits ? category.outfits.length : 0,
+                globalOutfitsCount: this.outfits ? this.outfits.length : 0,
+                globalOutfitsWithCategoryId: this.outfits ? this.outfits.filter(o => o.categoryId === category.id).length : 0
+            });
+            
             const categoryOutfitsList = (category.outfits && Array.isArray(category.outfits))
                 ? category.outfits
                 : this.outfits.filter(o => o.categoryId === category.id);
+            
+            console.log('Final categoryOutfitsList length:', categoryOutfitsList.length);
             
             if (categoryOutfitsList.length === 0) {
                 categoryOutfits.innerHTML = '<p style="text-align: center; color: #666; padding: 2rem;">No outfits in this category yet.</p>';
