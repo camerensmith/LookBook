@@ -63,10 +63,10 @@
                 <span class="material-icons">add_a_photo</span>
                 <span>Add Article</span>
             </button>
-                <button class="nav-btn mui-btn" data-action="view-articles">
-                    <span class="material-icons">inventory</span>
-                    <span>Add/View Articles</span>
-                </button>
+            <button class="nav-btn mui-btn" data-action="view-articles">
+                <span class="material-icons">inventory</span>
+                <span>Closet</span>
+            </button>
         </nav>
 
         <!-- Main Content Area -->
@@ -184,8 +184,31 @@
                                 <button id="clearOutfitBtn" class="btn-secondary">Clear All</button>
                             </div>
                         </div>
-                        <div id="outfitCanvas" class="outfit-canvas-area">
-                            <p class="placeholder-text">Drag articles here to build your outfit</p>
+                        <div id="slotGrid" class="slot-grid">
+                            <div class="slot" data-slot="head">
+                                <div class="slot-label">Head</div>
+                                <div class="slot-content"></div>
+                            </div>
+                            <div class="slot" data-slot="jacket">
+                                <div class="slot-label">Jacket</div>
+                                <div class="slot-content"></div>
+                            </div>
+                            <div class="slot" data-slot="body">
+                                <div class="slot-label">Body</div>
+                                <div class="slot-content"></div>
+                            </div>
+                            <div class="slot" data-slot="legs">
+                                <div class="slot-label">Legs</div>
+                                <div class="slot-content"></div>
+                            </div>
+                            <div class="slot" data-slot="feet">
+                                <div class="slot-label">Feet</div>
+                                <div class="slot-content"></div>
+                            </div>
+                            <div class="slot" data-slot="accessory">
+                                <div class="slot-label">Accessory</div>
+                                <div class="slot-content"></div>
+                            </div>
                         </div>
                         <div class="outfit-controls">
                             <button id="saveOutfitBtn" class="btn-primary" disabled>Save Outfit</button>
@@ -220,7 +243,7 @@
                     </button>
                 </div>
                 <div class="category-actions">
-                    <button class="btn-primary" onclick="window.app.navigateTo('add-outfit')">
+                    <button class="btn-primary" onclick="window.app.openAddOutfitsToCategory()">
                         <span class="material-icons">add</span>
                         <span>Add Outfit</span>
                     </button>
@@ -246,7 +269,7 @@
 
                     <!-- View Articles View -->
             <div id="viewArticlesView" class="view">
-                <h2>Your Articles</h2>
+                <h2>Closet</h2>
                 <div class="articles-header">
                     <button class="btn-primary" onclick="window.app.navigateTo('add-article')">
                         <span class="material-icons">add</span>
@@ -261,7 +284,7 @@
 
             <!-- Collections View -->
             <div id="collectionsView" class="view">
-                <h2>Collections</h2>
+                <h2>Your Collections</h2>
                 <div class="collections-header">
                     <button class="btn-primary" onclick="window.app.showCreateCollectionForm()">
                         <span class="material-icons">add</span>
@@ -361,6 +384,26 @@
                             <button type="submit" class="btn-primary">Save Outfit</button>
                         </div>
                     </form>
+                </div>
+            </div>
+
+            <!-- Outfit Zoom Modal -->
+            <div id="outfitZoomModal" class="modal hidden">
+                <div class="modal-content" style="max-width: 90vw; max-height: 90vh;">
+                    <div class="modal-header">
+                        <h3 id="outfitZoomTitle">Outfit</h3>
+                        <button id="closeOutfitZoomModal" class="close-btn">
+                            <span class="material-icons">close</span>
+                        </button>
+                    </div>
+                    <div class="zoom-container">
+                        <img id="outfitZoomImage" alt="Outfit" style="max-width:100%; max-height:70vh; display:block; margin:auto;">
+                        <div class="zoom-controls">
+                            <button id="zoomInBtn" class="btn-secondary">+</button>
+                            <button id="zoomOutBtn" class="btn-secondary">-</button>
+                            <button id="zoomResetBtn" class="btn-secondary">Reset</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 

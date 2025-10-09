@@ -32,6 +32,7 @@ class LookbookApp {
         this.isEditingOutfit = false;
         this.editingOutfitId = null;
         this.currentCategoryIcon = null;
+        this.currentOutfitSlots = { head: null, jacket: null, body: null, legs: null, feet: null, accessory: null };
         
         // Firestore
         this.db = null;
@@ -518,8 +519,14 @@ class LookbookApp {
             // Outfit builder events
             const searchArticles = document.getElementById('searchArticles');
             if (searchArticles) {
+                let searchDebounce;
                 searchArticles.addEventListener('input', (e) => {
-                    this.filterArticles(e.target.value);
+                    const term = e.target.value;
+                    // dynamic filter as you type with small debounce for perf
+                    clearTimeout(searchDebounce);
+                    searchDebounce = setTimeout(() => {
+                        this.renderArticles();
+                    }, 120);
                 });
             }
             
@@ -555,6 +562,7 @@ class LookbookApp {
                 clearOutfitBtn.addEventListener('click', () => {
                     console.log('Clear outfit button clicked');
                     this.clearOutfit();
+                    this.clearSlots();
                 });
             }
 
@@ -1421,6 +1429,8 @@ class LookbookApp {
             
             console.log('Article saved directly:', article);
             this.showToast('Article saved successfully!');
+            // Navigate to Closet
+            this.navigateTo('view-articles');
         } catch (error) {
             console.error('Error saving article directly:', error);
             this.showToast('Error saving article. Please try again.', 'error');
@@ -1465,6 +1475,8 @@ class LookbookApp {
             
             console.log('Article saved successfully:', article);
             this.showToast('Article saved successfully!');
+            // Navigate to Closet
+            this.navigateTo('view-articles');
         } catch (error) {
             console.error('Error saving article:', error);
             this.showToast('Error saving article. Please try again.', 'error');
@@ -2330,10 +2342,10 @@ class LookbookApp {
                 // Add edit/delete buttons
                 this.addCardActionButtons(outfitCard, 'outfit', outfit.id);
                 
-                // Add click handler to edit outfit (only on the card itself, not buttons)
+                // Click: open zoom modal (not actions)
                 outfitCard.addEventListener('click', (e) => {
                     if (!e.target.closest('.card-actions')) {
-                        this.editOutfit(outfit.id);
+                        this.openOutfitZoom(outfit);
                     }
                 });
                 
@@ -2346,11 +2358,49 @@ class LookbookApp {
         }
     }
 
+    openAddOutfitsToCategory() {
+        try {
+            // Flag that we're adding existing outfits into the currently viewed category
+            this.addToCategoryMode = true;
+            this.addToCategoryId = this.currentCategory ? this.currentCategory.id : null;
+            this.showSelectOutfitsModal();
+        } catch (error) {
+            console.error('Error opening add outfits to category:', error);
+            this.showToast('Error opening outfits. Please try again.', 'error');
+        }
+    }
+
+    openOutfitZoom(outfit) {
+        try {
+            const modal = document.getElementById('outfitZoomModal');
+            const title = document.getElementById('outfitZoomTitle');
+            const img = document.getElementById('outfitZoomImage');
+            const closeBtn = document.getElementById('closeOutfitZoomModal');
+            const zoomIn = document.getElementById('zoomInBtn');
+            const zoomOut = document.getElementById('zoomOutBtn');
+            const zoomReset = document.getElementById('zoomResetBtn');
+            if (!modal || !title || !img) return;
+            title.textContent = outfit.name || 'Outfit';
+            img.src = outfit.previewImage || '';
+            img.style.transform = 'scale(1)';
+            let scale = 1;
+            const apply = () => { img.style.transform = `scale(${scale})`; };
+            if (zoomIn) zoomIn.onclick = () => { scale = Math.min(4, scale + 0.2); apply(); };
+            if (zoomOut) zoomOut.onclick = () => { scale = Math.max(0.5, scale - 0.2); apply(); };
+            if (zoomReset) zoomReset.onclick = () => { scale = 1; apply(); };
+            if (closeBtn) closeBtn.onclick = () => { modal.classList.add('hidden'); };
+            modal.classList.remove('hidden');
+        } catch (error) {
+            console.error('Error opening outfit zoom:', error);
+        }
+    }
+
     initDragAndDrop() {
         try {
             const outfitCanvas = document.getElementById('outfitCanvas');
-            if (!outfitCanvas) {
-                console.error('Outfit canvas not found');
+            const slotGrid = document.getElementById('slotGrid');
+            if (!outfitCanvas && !slotGrid) {
+                console.error('No drop target found (neither outfitCanvas nor slotGrid)');
                 return;
             }
             
@@ -2360,23 +2410,52 @@ class LookbookApp {
             this.isDragging = false;
             
             // Handle drops on outfit canvas (both mouse and touch)
-            outfitCanvas.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                outfitCanvas.style.borderColor = '#8b5cf6';
-            });
-            
-            outfitCanvas.addEventListener('dragleave', (e) => {
-                e.preventDefault();
-                outfitCanvas.style.borderColor = '#6366f1';
-            });
-            
-            outfitCanvas.addEventListener('drop', (e) => {
-                e.preventDefault();
-                outfitCanvas.style.borderColor = '#6366f1';
+            if (outfitCanvas) {
+                outfitCanvas.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    outfitCanvas.style.borderColor = '#8b5cf6';
+                });
                 
-                const articleId = e.dataTransfer.getData('text/plain');
-                this.addArticleToOutfit(articleId, e.offsetX, e.offsetY);
-            });
+                outfitCanvas.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    outfitCanvas.style.borderColor = '#6366f1';
+                });
+                
+                outfitCanvas.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    outfitCanvas.style.borderColor = '#6366f1';
+                    
+                    const articleId = e.dataTransfer.getData('text/plain');
+                    this.addArticleToOutfit(articleId, e.offsetX, e.offsetY);
+                });
+            }
+
+            // Handle drops on slot grid
+            if (slotGrid) {
+                const slots = slotGrid.querySelectorAll('.slot');
+                slots.forEach(slot => {
+                    slot.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        slot.style.borderColor = '#8b5cf6';
+                    });
+                    slot.addEventListener('dragleave', (e) => {
+                        e.preventDefault();
+                        slot.style.borderColor = '#cbd5e1';
+                    });
+                    slot.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        slot.style.borderColor = '#cbd5e1';
+                        const key = slot.dataset.slot;
+                        const articleId = e.dataTransfer.getData('text/plain');
+                        const article = this.articles.find(a => a.id === articleId);
+                        if (article) {
+                            this.currentOutfitSlots[key] = { articleId: article.id, name: article.name, image: article.processedImage || article.image, article };
+                            this.renderSlots();
+                            this.updateSaveButton();
+                        }
+                    });
+                });
+            }
 
             // Make articles draggable (mouse)
             document.addEventListener('dragstart', (e) => {
@@ -2412,6 +2491,44 @@ class LookbookApp {
         } catch (error) {
             console.error('Error initializing drag and drop:', error);
         }
+    }
+
+    // Slots rendering and assignment
+    renderSlots() {
+        try {
+            const grid = document.getElementById('slotGrid');
+            if (!grid) return;
+            const slots = grid.querySelectorAll('.slot');
+            slots.forEach(slotEl => {
+                const key = slotEl.dataset.slot;
+                const content = slotEl.querySelector('.slot-content');
+                content.innerHTML = '';
+                const item = this.currentOutfitSlots[key];
+                if (item) {
+                    slotEl.classList.add('filled');
+                    slotEl.classList.remove('empty');
+                    const img = document.createElement('img');
+                    img.src = item.image || item.processedImage || item.article?.processedImage || item.article?.image || '';
+                    img.alt = this.escapeHtml(item.name || item.article?.name || '');
+                    content.appendChild(img);
+                } else {
+                    slotEl.classList.add('empty');
+                    slotEl.classList.remove('filled');
+                    const p = document.createElement('p');
+                    p.className = 'placeholder-text';
+                    p.textContent = 'Drop here';
+                    content.appendChild(p);
+                }
+            });
+        } catch (error) {
+            console.error('Error rendering slots:', error);
+        }
+    }
+
+    clearSlots() {
+        this.currentOutfitSlots = { head: null, body: null, legs: null, feet: null, accessory: null };
+        this.renderSlots();
+        this.updateSaveButton();
     }
     
     startTouchDrag(element, touch) {
@@ -2503,13 +2620,28 @@ class LookbookApp {
                 const x = touch.clientX - canvasRect.left;
                 const y = touch.clientY - canvasRect.top;
                 
-                // Add article to outfit
+                // If slot grid exists, assign to nearest slot, else add freely
+                const slotGrid = document.getElementById('slotGrid');
                 const articleId = this.draggedElement.dataset.articleId;
                 const article = this.articles.find(a => a.id === articleId);
-                if (article) {
+                if (slotGrid && article) {
+                    const slots = Array.from(slotGrid.querySelectorAll('.slot'));
+                    // Find slot whose rect contains the drop point
+                    const target = slots.find(s => {
+                        const r = s.getBoundingClientRect();
+                        return touch.clientX >= r.left && touch.clientX <= r.right && touch.clientY >= r.top && touch.clientY <= r.bottom;
+                    });
+                    if (target) {
+                        const key = target.dataset.slot;
+                        this.currentOutfitSlots[key] = { articleId: article.id, name: article.name, image: article.processedImage || article.image, article };
+                        this.renderSlots();
+                        this.updateSaveButton();
+                    } else {
+                        // Fallback to free placement if not on a slot
+                        this.addArticleToOutfit(article, 'normal');
+                    }
+                } else if (article) {
                     this.addArticleToOutfit(article, 'normal');
-                } else {
-                    console.warn('Article not found for ID:', articleId);
                 }
             }
             
@@ -2938,6 +3070,58 @@ class LookbookApp {
         }
     }
 
+    async generateSlotsPreview() {
+        try {
+            const grid = document.getElementById('slotGrid');
+            if (!grid) return null;
+            const rect = grid.getBoundingClientRect();
+            const tempCanvas = document.createElement('canvas');
+            const ctx = tempCanvas.getContext('2d');
+            tempCanvas.width = Math.ceil(rect.width);
+            tempCanvas.height = Math.ceil(rect.height);
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+            // Compute slot rects
+            const getSlotRect = (key) => {
+                const el = grid.querySelector(`.slot[data-slot="${key}"]`);
+                if (!el) return null;
+                const r = el.getBoundingClientRect();
+                return { x: r.left - rect.left, y: r.top - rect.top, w: r.width, h: r.height };
+            };
+
+            const order = ['head', 'jacket', 'body', 'legs', 'feet', 'accessory'];
+            for (const key of order) {
+                const s = this.currentOutfitSlots[key];
+                if (!s) continue;
+                const slotR = getSlotRect(key);
+                if (!slotR) continue;
+                const img = await this.loadImage(s.image);
+                // Fit image into slot while preserving aspect
+                const scale = Math.min(slotR.w / img.width, slotR.h / img.height);
+                const drawW = img.width * scale;
+                const drawH = img.height * scale;
+                const dx = slotR.x + (slotR.w - drawW) / 2;
+                const dy = slotR.y + (slotR.h - drawH) / 2;
+                ctx.drawImage(img, dx, dy, drawW, drawH);
+            }
+
+            return tempCanvas.toDataURL('image/png');
+        } catch (error) {
+            console.error('Error generating slots preview:', error);
+            return null;
+        }
+    }
+
+    loadImage(src) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = src;
+        });
+    }
+
     clearOutfit() {
         try {
             this.currentOutfitItems = [];
@@ -2959,10 +3143,12 @@ class LookbookApp {
         try {
             const saveBtn = document.getElementById('saveOutfitBtn');
             if (saveBtn) {
-                const shouldDisable = this.currentOutfitItems.length === 0;
+                const slotCount = Object.values(this.currentOutfitSlots || {}).filter(Boolean).length;
+                const shouldDisable = (this.currentOutfitItems.length === 0) && (slotCount === 0);
                 saveBtn.disabled = shouldDisable;
                 console.log('Save button updated:', {
                     itemsCount: this.currentOutfitItems.length,
+                    slotCount,
                     disabled: shouldDisable,
                     buttonFound: !!saveBtn
                 });
@@ -3118,10 +3304,14 @@ class LookbookApp {
             }
         }
         
-        // Pre-calculate outfit counts to avoid repeated filtering
+        // Pre-calculate outfit counts including embedded category.outfits
         const outfitCounts = {};
-        this.outfits.forEach(outfit => {
-            outfitCounts[outfit.categoryId] = (outfitCounts[outfit.categoryId] || 0) + 1;
+        this.categories.forEach(cat => {
+            let count = 0;
+            if (Array.isArray(cat.outfits)) count += cat.outfits.length;
+            // Also include global outfits assigned by categoryId
+            count += this.outfits.filter(o => o.categoryId === cat.id).length;
+            outfitCounts[cat.id] = count;
         });
         
         // Create document fragment for batch DOM updates
@@ -3424,15 +3614,13 @@ class LookbookApp {
     
     showSaveOutfitModal() {
         try {
-            if (this.currentOutfitItems.length === 0) {
-                this.showToast('Please add some articles to your outfit first!', 'info');
+            const slotCount = Object.values(this.currentOutfitSlots || {}).filter(Boolean).length;
+            if (this.currentOutfitItems.length === 0 && slotCount === 0) {
+                this.showToast('Please add at least one article (slot or canvas) first', 'info');
                 return;
             }
             
-            if (this.categories.length === 0) {
-                this.showToast('Please create a category first to organize your outfits!', 'info');
-                return;
-            }
+            // Categories are optional; if none exist, we'll save to "My Outfits" automatically
             
             const modal = document.getElementById('saveOutfitModal');
             const nameInput = document.getElementById('modalOutfitName');
@@ -3758,6 +3946,8 @@ class LookbookApp {
             if (modal) {
                 modal.classList.add('hidden');
                 this.selectedOutfits = [];
+                this.addToCategoryMode = false;
+                this.addToCategoryId = null;
             }
         } catch (error) {
             console.error('Error closing select outfits modal:', error);
@@ -3918,23 +4108,48 @@ class LookbookApp {
                 return;
             }
             
-            // Add selected outfits to current outfit items
+            const selectedCount = this.selectedOutfits.length;
+            if (this.addToCategoryMode && this.addToCategoryId) {
+                // Add selected outfits into the current category
+                const category = this.categories.find(c => c.id === this.addToCategoryId);
+                if (category) {
+                    if (!category.outfits) category.outfits = [];
+                    this.selectedOutfits.forEach(outfitId => {
+                        const outfit = this.findOutfitById(outfitId);
+                        if (!outfit) return;
+                        // Avoid duplicates by id
+                        if (!category.outfits.find(o => o.id === outfit.id)) {
+                            const copy = { ...outfit, categoryId: category.id };
+                            category.outfits.push(copy);
+                        }
+                    });
+                    this.saveData();
+                    // Re-render the category detail grid dynamically
+                    const container = document.getElementById('categoryOutfits');
+                    if (container) {
+                        this.renderCategoryOutfits(category, container);
+                    }
+                    this.closeSelectOutfitsModal();
+                    this.showToast(`${selectedCount} outfit(s) added successfully!`);
+                    return;
+                }
+            }
+
+            // Fallback: add into the outfit builder canvas (legacy behaviour)
             this.selectedOutfits.forEach(outfitId => {
                 const outfit = this.findOutfitById(outfitId);
                 if (outfit) {
-                    // Add each item from the selected outfit
                     outfit.items.forEach(item => {
                         this.currentOutfitItems.push({
                             ...item,
-                            id: Date.now().toString() + Math.random().toString(36).substr(2, 9) // Generate new ID
+                            id: Date.now().toString() + Math.random().toString(36).substr(2, 9)
                         });
                     });
                 }
             });
-            
             this.closeSelectOutfitsModal();
             this.renderOutfitItems();
-            this.showToast(`${this.selectedOutfits.length} outfit(s) added successfully!`);
+            this.showToast(`${selectedCount} outfit(s) added successfully!`);
         } catch (error) {
             console.error('Error accepting selected outfits:', error);
             this.showToast('Error adding outfits. Please try again.', 'error');
@@ -4804,9 +5019,9 @@ class LookbookApp {
                 return;
             }
             
-            // Category is now optional
-            
-            if (this.currentOutfitItems.length === 0) {
+            // Category is optional
+            const slotCount = Object.values(this.currentOutfitSlots || {}).filter(Boolean).length;
+            if (this.currentOutfitItems.length === 0 && slotCount === 0) {
                 this.showToast('Please add some articles to your outfit first!', 'error');
                 return;
             }
@@ -4816,12 +5031,36 @@ class LookbookApp {
                 id: Date.now().toString(),
                 name: name,
                 categoryId: categoryId || null,
-                items: [...this.currentOutfitItems],
+                items: [],
                 createdAt: new Date().toISOString()
             };
             
+            // Build items list from slots if any are filled, otherwise use free placement items
+            if (slotCount > 0) {
+                const order = ['head', 'jacket', 'body', 'legs', 'feet', 'accessory'];
+                order.forEach(slotKey => {
+                    const s = this.currentOutfitSlots[slotKey];
+                    if (s) {
+                        outfit.items.push({
+                            id: `${slotKey}-${Date.now()}`,
+                            slot: slotKey,
+                            articleId: s.articleId,
+                            name: s.name,
+                            image: s.image
+                        });
+                    }
+                });
+            } else {
+                outfit.items = [...this.currentOutfitItems];
+            }
+            
             // Generate preview image
-            const previewImage = await this.generateOutfitPreview();
+            let previewImage = null;
+            if (slotCount > 0) {
+                previewImage = await this.generateSlotsPreview();
+            } else {
+                previewImage = await this.generateOutfitPreview();
+            }
             outfit.previewImage = previewImage;
             
             // Save outfit to selected category or create "My Outfits" category
@@ -4852,6 +5091,7 @@ class LookbookApp {
             // Save data and clear outfit
             this.saveData();
             this.clearOutfit();
+            this.clearSlots();
             this.closeSaveOutfitModal();
             this.renderCreatedOutfits();
             
@@ -4907,7 +5147,9 @@ class LookbookApp {
         try {
             categoryOutfits.innerHTML = '';
             
-            const categoryOutfitsList = this.outfits.filter(o => o.categoryId === category.id);
+            const categoryOutfitsList = (category.outfits && Array.isArray(category.outfits))
+                ? category.outfits
+                : this.outfits.filter(o => o.categoryId === category.id);
             
             if (categoryOutfitsList.length === 0) {
                 categoryOutfits.innerHTML = '<p style="text-align: center; color: #666; padding: 2rem;">No outfits in this category yet.</p>';
@@ -4961,18 +5203,47 @@ class LookbookApp {
             const outfitDisplay = document.getElementById('outfitDisplay');
             if (!outfitDisplay) return;
             
+            // Render using slot grid if outfit has slot-based items, otherwise show preview image
             outfitDisplay.innerHTML = '';
-            
-            outfit.items.forEach(item => {
-                const article = this.articles.find(a => a.id === item.articleId);
-                if (article) {
-                    const img = document.createElement('img');
-                    img.src = article.image;
-                    img.alt = article.name;
-                    img.title = article.name;
-                    outfitDisplay.appendChild(img);
-                }
-            });
+            const hasSlots = outfit.items.some(it => it.slot);
+            if (hasSlots) {
+                const grid = document.createElement('div');
+                grid.className = 'slot-grid';
+                grid.innerHTML = `
+                    <div class="slot" data-slot="head"><div class="slot-label">Head</div><div class="slot-content"></div></div>
+                    <div class="slot" data-slot="jacket"><div class="slot-label">Jacket</div><div class="slot-content"></div></div>
+                    <div class="slot" data-slot="body"><div class="slot-label">Body</div><div class="slot-content"></div></div>
+                    <div class="slot" data-slot="legs"><div class="slot-label">Legs</div><div class="slot-content"></div></div>
+                    <div class="slot" data-slot="feet"><div class="slot-label">Feet</div><div class="slot-content"></div></div>
+                    <div class="slot" data-slot="accessory"><div class="slot-label">Accessory</div><div class="slot-content"></div></div>
+                `;
+                outfitDisplay.appendChild(grid);
+                // map slot -> item
+                const bySlot = {};
+                outfit.items.forEach(it => { if (it.slot) bySlot[it.slot] = it; });
+                ['head','jacket','body','legs','feet','accessory'].forEach(slot => {
+                    const it = bySlot[slot];
+                    const content = grid.querySelector(`.slot[data-slot="${slot}"] .slot-content`);
+                    if (!content) return;
+                    if (it) {
+                        const img = document.createElement('img');
+                        img.src = it.image || (this.articles.find(a=>a.id===it.articleId)?.image) || '';
+                        img.alt = it.name || '';
+                        content.appendChild(img);
+                    } else {
+                        const p = document.createElement('p');
+                        p.className = 'placeholder-text';
+                        p.textContent = '—';
+                        content.appendChild(p);
+                    }
+                });
+            } else if (outfit.previewImage) {
+                const img = document.createElement('img');
+                img.src = outfit.previewImage;
+                img.alt = outfit.name;
+                img.style.maxWidth = '100%';
+                outfitDisplay.appendChild(img);
+            }
             
             this.navigateTo('outfitDetail');
             console.log('Outfit detail shown:', outfit.name);

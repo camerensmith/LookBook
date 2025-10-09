@@ -390,6 +390,27 @@ body {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* Outfit Zoom Modal */
+.zoom-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+.zoom-controls {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    gap: 0.5rem;
+    z-index: 10;
+}
+
+#outfitZoomImage {
+    z-index: 1;
+}
+
 .created-outfit-name {
     color: #6366f1;
     font-size: 0.9rem;
@@ -1898,6 +1919,111 @@ body {
     margin: 1rem 0;
     position: relative;
     background: rgba(99, 102, 241, 0.05);
+}
+
+/* Slot-based builder */
+.slot-grid {
+    display: grid;
+    grid-template-columns: 110px 1fr 140px; /* jacket | body | accessory */
+    /* Keep head/body/legs/feet all in the LEFT column to lock alignment */
+    grid-template-areas:
+        "head head head"
+        "jacket body accessory"
+        "legs legs legs"
+        "feet feet feet";
+    grid-template-rows: 80px 110px 90px 80px; /* compact slots */
+    gap: 0.5rem;
+    margin: 0.5rem 0 1rem;
+    align-items: stretch;
+    justify-items: stretch;
+}
+
+/* When no accessory, keep body centered full width */
+.slot-grid.no-accessory {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+        "head"
+        "body"
+        "legs"
+        "feet";
+}
+
+.slot-grid.no-accessory .slot[data-slot="body"],
+.slot-grid.no-accessory .slot[data-slot="head"],
+.slot-grid.no-accessory .slot[data-slot="legs"],
+.slot-grid.no-accessory .slot[data-slot="feet"] {
+    grid-column: auto;
+}
+
+.slot {
+    background: #fff;
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 0.4rem;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    overflow: hidden; /* prevent image jutting */
+    height: 100%;
+}
+
+.slot-label {
+    position: absolute;
+    top: 8px;
+    left: 10px;
+    font-size: 0.75rem;
+    color: #6b7280;
+    background: rgba(255,255,255,0.9);
+    padding: 2px 6px;
+    border-radius: 999px;
+}
+
+.slot-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 4px;
+}
+
+.slot-content img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 6px;
+    display: block;
+    margin: auto;
+}
+
+/* Give suggested heights per slot for visual balance */
+/* explicit grid areas already set heights; no aspect ratio to avoid expansion */
+
+/* Accessory slot spans full width */
+.slot[data-slot="head"] { grid-area: head; }
+.slot[data-slot="jacket"] { grid-area: jacket; }
+.slot[data-slot="body"] { grid-area: body; }
+.slot[data-slot="legs"] { grid-area: legs; }
+.slot[data-slot="feet"] { grid-area: feet; }
+.slot[data-slot="accessory"] { grid-area: accessory; }
+
+/* When accessory is hidden, let body span both columns without changing row heights */
+/* When no accessory, layout stays; the right column is simply empty */
+
+@media (max-width: 480px) {
+    .slot-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+    .slot {
+        min-height: 96px;
+    }
+    .slot-content img {
+        max-width: 80px;
+        max-height: 80px;
+    }
 }
 
 .outfit-item {
