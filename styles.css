@@ -1519,9 +1519,12 @@ body {
     color: #666;
     background: rgba(255, 255, 255, 0.9);
     border-radius: 16px;
-    margin: 2rem 0;
+    margin: 2rem auto;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     backdrop-filter: blur(20px);
+    width: 100%;
+    max-width: 400px;
+    display: block;
 }
 
 .empty-icon {
@@ -2438,7 +2441,9 @@ body {
     
     .empty-state {
         padding: 2rem 1rem;
-        margin: 1rem 0;
+        margin: 1rem auto;
+        width: calc(100% - 2rem);
+        max-width: 350px;
     }
     
     .empty-icon .material-icons {
@@ -2457,6 +2462,15 @@ body {
     .empty-state .btn-primary {
         padding: 0.75rem 1.5rem;
         font-size: 0.9rem;
+    }
+    
+    /* Ensure empty states break out of grid layout */
+    .categories-list .empty-state,
+    .articles-grid .empty-state {
+        grid-column: 1 / -1;
+        width: 100%;
+        max-width: none;
+        margin: 2rem auto;
     }
 }
 
