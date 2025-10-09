@@ -656,6 +656,29 @@ class LookbookApp {
                 });
             }
 
+            // Theme toggle
+            const themeToggleBtn = document.getElementById('themeToggleBtn');
+            const themeToggleIcon = document.getElementById('themeToggleIcon');
+            if (themeToggleBtn && themeToggleIcon) {
+                const applyTheme = (mode) => {
+                    document.documentElement.setAttribute('data-theme', mode);
+                    if (mode === 'dark') {
+                        themeToggleIcon.textContent = 'light_mode';
+                    } else {
+                        themeToggleIcon.textContent = 'dark_mode';
+                    }
+                };
+                const stored = localStorage.getItem('lookbook_theme');
+                const initial = stored || 'light';
+                applyTheme(initial);
+                themeToggleBtn.addEventListener('click', () => {
+                    const current = document.documentElement.getAttribute('data-theme') || 'light';
+                    const next = current === 'light' ? 'dark' : 'light';
+                    localStorage.setItem('lookbook_theme', next);
+                    applyTheme(next);
+                });
+            }
+
             const googleBtn = document.getElementById('googleSignInBtn');
             if (googleBtn) {
                 googleBtn.addEventListener('click', async () => {
@@ -5148,7 +5171,7 @@ class LookbookApp {
             }
             outfit.previewImage = previewImage;
             
-            // Save outfit to selected category or create "My Outfits" category
+            // Save outfit to selected category if provided; otherwise keep uncategorized in global list
             if (categoryId) {
                 const category = this.categories.find(c => c.id === categoryId);
                 if (category) {
@@ -5159,18 +5182,9 @@ class LookbookApp {
                     return;
                 }
             } else {
-                // Add to "My Outfits" (uncategorized)
-                let myOutfitsCategory = this.categories.find(c => c.name === 'My Outfits');
-                if (!myOutfitsCategory) {
-                    myOutfitsCategory = {
-                        id: 'my-outfits',
-                        name: 'My Outfits',
-                        outfits: [],
-                        createdAt: new Date().toISOString()
-                    };
-                    this.categories.push(myOutfitsCategory);
-                }
-                myOutfitsCategory.outfits.push(outfit);
+                // Store as uncategorized in the global outfits list
+                if (!Array.isArray(this.outfits)) this.outfits = [];
+                this.outfits.push(outfit);
             }
             
             // Save data and clear outfit
