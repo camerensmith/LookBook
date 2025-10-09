@@ -2299,18 +2299,27 @@ class LookbookApp {
                 return;
             }
             
-            // Get all outfits from all categories
-            const allOutfits = [];
+            // Collect all outfits across categories and global list, but dedupe by id
+            const idToOutfit = new Map();
+            // From categories
             this.categories.forEach(category => {
-                if (category.outfits) {
+                if (Array.isArray(category.outfits)) {
                     category.outfits.forEach(outfit => {
-                        allOutfits.push({
-                            ...outfit,
-                            categoryName: category.name
-                        });
+                        if (!idToOutfit.has(outfit.id)) {
+                            idToOutfit.set(outfit.id, { ...outfit, categoryName: category.name });
+                        }
                     });
                 }
             });
+            // Also include any global outfits that may not be in a category yet
+            if (Array.isArray(this.outfits)) {
+                this.outfits.forEach(outfit => {
+                    if (!idToOutfit.has(outfit.id)) {
+                        idToOutfit.set(outfit.id, { ...outfit, categoryName: null });
+                    }
+                });
+            }
+            const allOutfits = Array.from(idToOutfit.values());
             
             if (allOutfits.length === 0) {
                 createdOutfitsList.innerHTML = `
@@ -3502,6 +3511,21 @@ class LookbookApp {
                         <span>Delete</span>
                     </button>
                 `;
+                
+                // Ensure delete works on mobile: intercept touch and click on the button
+                const deleteBtn = articleCard.querySelector('.delete-btn');
+                if (deleteBtn) {
+                    deleteBtn.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.deleteArticle(article.id);
+                    }, { passive: false });
+                    deleteBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.deleteArticle(article.id);
+                    });
+                }
                 
                 articlesGrid.appendChild(articleCard);
             });
