@@ -1410,6 +1410,12 @@ class LookbookApp {
                 this.showToast('Error: Missing article data', 'error');
                 return;
             }
+            // Unique name validation
+            const nameLower = this.tempArticleName.trim().toLowerCase();
+            if (this.articles.some(a => a.name && a.name.trim().toLowerCase() === nameLower)) {
+                this.showToast('An article with this name already exists', 'error');
+                return;
+            }
             
             const article = {
                 id: Date.now().toString(),
@@ -1454,6 +1460,13 @@ class LookbookApp {
             
             if (!name || !this.processedImage) {
                 this.showToast('Please provide a name and image for the article', 'error');
+                return;
+            }
+
+            // Unique name validation
+            const nameLower = name.trim().toLowerCase();
+            if (this.articles.some(a => a.name && a.name.trim().toLowerCase() === nameLower)) {
+                this.showToast('An article with this name already exists', 'error');
                 return;
             }
 
@@ -1825,19 +1838,22 @@ class LookbookApp {
                 this.showToast('Article not found', 'error');
                 return;
             }
+            // Prevent deleting if article is used in any outfit (global or category)
+            const inGlobalOutfit = Array.isArray(this.outfits) && this.outfits.some(o => Array.isArray(o.items) && o.items.some(it => it.articleId === articleId));
+            const inCategoryOutfit = Array.isArray(this.categories) && this.categories.some(c => Array.isArray(c.outfits) && c.outfits.some(o => Array.isArray(o.items) && o.items.some(it => it.articleId === articleId)));
+            if (inGlobalOutfit || inCategoryOutfit) {
+                this.showToast('Cannot delete: this article is used in an outfit', 'error');
+                return;
+            }
             
-            this.showDeleteConfirmation(
-                'article',
-                article.name,
-                () => {
-                    this.articles = this.articles.filter(a => a.id !== articleId);
-                    this.saveData();
-                    this.renderArticles();
-                    this.renderArticlesGrid();
-                    this.populateTagFilters();
-                    this.showToast('Article deleted successfully!');
-                }
-            );
+            this.showDeleteConfirmation('article', article.name, () => {
+                this.articles = this.articles.filter(a => a.id !== articleId);
+                this.saveData();
+                this.renderArticles();
+                this.renderArticlesGrid();
+                this.populateTagFilters();
+                this.showToast('Article deleted successfully!');
+            });
         } catch (error) {
             console.error('Error deleting article:', error);
             this.showToast('Error deleting article. Please try again.', 'error');
