@@ -1867,8 +1867,14 @@ class LookbookApp {
     
     findOutfitById(outfitId) {
         try {
+            // Check global outfits (Hangers)
+            if (Array.isArray(this.outfits)) {
+                const globalMatch = this.outfits.find(o => o.id === outfitId);
+                if (globalMatch) return globalMatch;
+            }
+            // Fallback: search category-embedded outfits
             for (const category of this.categories) {
-                if (category.outfits) {
+                if (Array.isArray(category.outfits)) {
                     const outfit = category.outfits.find(o => o.id === outfitId);
                     if (outfit) return outfit;
                 }
