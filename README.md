@@ -1,6 +1,8 @@
 # Lookbook – Closet, Outfits, and Collections (PWA)
 
-Lookbook is a fast, privacy-first Progressive Web App to capture your closet, tag items, build outfits, and organize them into categories and collections – without ads or bloat.
+<video src="concepts/demo.mov" controls width="720" style="max-width:100%"></video>
+
+Lookbook is a fast PWA to capture your closet, tag items, build outfits, and organize them into categories and collections – without ads or bloat.
 
 Primary stakeholder: My girlfriend. She defined the acceptance criteria and guided feature planning. Her goals: an easy, simple, streamlined app to organize work/play/sleepwear, add seasonal/holiday groupings, and keep data trustworthy – no ads, minimal fluff, just the right amount of customization (tags, icons for categories/collections).
 
