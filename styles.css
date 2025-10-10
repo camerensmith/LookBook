@@ -353,9 +353,9 @@ body {
 }
 
 .created-outfits-section h3 {
-    color: #6366f1;
+    color: #111827; /* high contrast on light */
     font-size: 1.2rem;
-    font-weight: 600;
+    font-weight: 700;
     margin-bottom: 1rem;
 }
 
@@ -436,12 +436,18 @@ body {
 }
 
 .created-outfit-name {
-    color: #6366f1;
+    color: #111827; /* high contrast */
     font-size: 0.9rem;
     font-weight: 600;
     margin: 0;
     line-height: 1.2;
     word-break: break-word;
+}
+
+/* Dark mode adjustments */
+body.dark-mode .created-outfits-section h3,
+body.dark-mode .created-outfit-name {
+    color: #e5e7eb; /* light text on dark */
 }
 
 /* Category Actions */

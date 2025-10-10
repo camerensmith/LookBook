@@ -2432,7 +2432,7 @@ class LookbookApp {
                             <span class="material-icons">checkroom</span>
                         </div>
                         <h3>No Outfits Yet</h3>
-                        <p>Create your first outfit by dragging articles to the canvas above</p>
+                        <p>Create your first outfit in the Outfit Creator.</p>
                     </div>
                 `;
                 return;
@@ -4122,19 +4122,23 @@ class LookbookApp {
             const outfitsList = document.getElementById('outfitsSelectionList');
             if (!outfitsList) return;
             
-            // Get all outfits from all categories
-            const allOutfits = [];
+            // Aggregate outfits from global list and categories, deduped by id
+            const byId = new Map();
+            if (Array.isArray(this.outfits)) {
+                this.outfits.forEach(o => {
+                    if (o && o.id && !byId.has(o.id)) byId.set(o.id, { ...o });
+                });
+            }
             this.categories.forEach(category => {
-                if (category.outfits) {
+                if (Array.isArray(category.outfits)) {
                     category.outfits.forEach(outfit => {
-                        allOutfits.push({
-                            ...outfit,
-                            categoryName: category.name,
-                            categoryId: category.id
-                        });
+                        if (outfit && outfit.id && !byId.has(outfit.id)) {
+                            byId.set(outfit.id, { ...outfit, categoryId: category.id, categoryName: category.name });
+                        }
                     });
                 }
             });
+            const allOutfits = Array.from(byId.values());
             
             if (allOutfits.length === 0) {
                 outfitsList.innerHTML = `
