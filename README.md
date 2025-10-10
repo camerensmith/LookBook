@@ -1,36 +1,129 @@
-# Lookbook - Personal Style Manager PWA
+# Lookbook – Closet, Outfits, and Collections (PWA)
 
-A Progressive Web App (PWA) for managing your clothing collection and creating outfits. Built with pure HTML, CSS, and JavaScript, optimized for iOS devices.
+Lookbook is a fast, privacy-first Progressive Web App to capture your closet, tag items, build outfits, and organize them into categories and collections – without ads or bloat.
 
-## Features
+Primary stakeholder: My girlfriend. She defined the acceptance criteria and guided feature planning. Her goals: an easy, simple, streamlined app to organize work/play/sleepwear, add seasonal/holiday groupings, and keep data trustworthy – no ads, minimal fluff, just the right amount of customization (tags, icons for categories/collections).
 
-### 🗂️ Category Management
-- Create custom categories (e.g., "Office", "Work", "School")
-- Organize outfits by lifestyle or occasion
-- View outfit counts per category
+## Product Overview (portfolio case study)
 
-### 📸 Article Management
-- **Camera Integration**: Take photos directly with your iPhone camera
-- **Automatic Background Removal**: AI-powered background removal for clean clothing images
-- **Tagging System**: Add descriptive tags for easy organization
-- **Search & Filter**: Find articles by name or tags
+- Problem: Existing apps were slow, buggy, ad-heavy, or felt noisy. Trust and speed were missing.
+- Outcome: A lean, responsive PWA that works offline, respects user intent, and syncs when signed in.
+- Vision: “Simple by default, powerful when needed.”
 
-### 👕 Outfit Builder
-- **Drag & Drop Interface**: Intuitive outfit composition
-- **Article Library**: Select from your saved clothing items
-- **Positioning Control**: Arrange items exactly where you want them
-- **Real-time Preview**: See your outfit come together as you build it
+## Feature Highlights
 
-### 💾 Data Persistence
-- **Local Storage**: All data saved locally on your device
-- **Offline Support**: Works without internet connection
-- **PWA Features**: Install as a native app on your home screen
+### Closet (Articles)
+- Capture via camera or upload
+- Automatic background removal (client-side with manual brush/eraser tools)
+- Name + tag on the same screen; duplicate name validation
+- Search by name; multi-select tag filtering
+- Long-press delete with confirmation; prevents deleting if in use by an outfit
 
-### 🔐 Authentication (Optional)
-- **Providers**: Google, Apple, and Email/Password via Firebase Auth
-- **User-Scoped Data**: Data is namespaced by user ID when signed in
-- **Guest Mode**: Works without an account; data stays on-device
+### Outfit Builder
+- Two modes:
+  - Free placement with drag-and-drop (precise x/y saved)
+  - Slot-based builder with locked alignment: Head, Jacket, Body, Legs, Feet, Accessory
+- Live preview generation (canvas) and saved preview images
+- Edit existing outfits in a dedicated modal with search + tag filtering
+- Zoom modal with controls (+/–/Reset) and inline delete icon
 
+### Categories and Collections
+- Categories are simple folders for outfits (no auto-spawn from articles)
+- Category cards support custom icons
+- “Add Outfit” pulls from already created outfits via a multi-select modal
+- “Create New” card is always visible in the categories dashboard
+- Collections group categories; add existing categories or create one in-flow if none exist
+- Tags can be applied to collections and categories
+
+### Navigation and UX
+- Precise back navigation (always returns to the immediate prior view)
+- Mobile-first event handling (touchstart, long-press); larger hit targets
+- Toast notifications replace alerts for non-blocking feedback
+- Dark/light theme toggle (MUI icons), preference persisted
+- Hangers section in Closet displays saved outfits (deduplicated)
+
+### Persistence and Sync
+- LocalStorage by default for offline-first performance
+- Optional Firebase Auth (Google, Apple, Email/Password)
+- Firestore integration for user-scoped cloud sync (UID-namespaced)
+- Hybrid model: local backup + Firestore when signed in
+
+## Enhancements and Bug Fixes (Selected)
+- Fixed initial navigation mismatch; restored clickability and view activation
+- Reliable back behavior across categories/collections
+- Prevented duplicate outfits and improved counts in category tiles
+- Touch-friendly drag-and-drop, long-press delete, passive listeners
+- Slot alignment locked (Head top; Jacket|Body|Accessory row; Legs; Feet); Body centers when no accessory
+- Prevented slot expansion; compact mobile sizing; `object-fit: contain`
+- Saved outfit detail now renders with the same grid as builder
+- Outfit search and tag filtering optimized
+- Removed auto “My Outfits” creation; uncategorized outfits stay global
+- Category “Add Outfit” uses modal; immediate category refresh on accept
+- Zoom controls layered above image; added delete within zoom
+- Closet and Categories empty states centered on mobile
+- Removed alerts in favor of toasts; added theme toggle; replaced header text with `wordmark.png`
+
+## Development Timeline (high-level)
+1) Foundation: PWA shell, views, basic navigation; LocalStorage persistence
+2) Closet flow: capture/upload, background removal, edit tools; save article with tags
+3) Outfits: free placement + slot-based builder; previews; edit modal; zoom
+4) Organization: categories (with icons), collections (group categories), add outfits via modal
+5) Mobile UX: touch DnD, long-press delete, toasts, dark/light mode
+6) Sync: Firebase Auth + Firestore (UID namespacing), hybrid local/cloud persistence
+7) Polishing: alignment fixes, counts, dedupe, performance, empty states
+
+## API, Auth, and Database
+- Firebase Authentication: Google, Apple, Email/Password
+- Firestore: user document namespace `users/{uid}/{collection}/data`
+  - Collections: `categories`, `articles`, `outfits`, `collections`
+  - Security rules: authenticated users can only read/write their own data
+- Data model (simplified):
+  - Article: `{ id, name, tags[], image, processedImage }`
+  - Outfit: `{ id, name, previewImage, items[], slots? }` where items are free-form or `{slot, articleId, image}`
+  - Category: `{ id, name, icon?, outfits[] }`
+  - Collection: `{ id, name, description?, tags[], icon?, categoryIds[] }`
+
+## Tech Stack
+- Frontend: HTML, CSS, Vanilla JavaScript
+- UI: Material Icons, MUI web components (CDN)
+- PWA: Manifest + Service Worker for offline capability
+- Image: `@imgly/background-removal` (CDN) + Canvas for manual tools and previews
+- Auth/DB/Hosting: Firebase (Auth, Firestore, Hosting)
+- CI/CD: Firebase CLI + GitHub Actions for deploys
+
+## Requirements
+### Functional
+- Capture or upload images; edit with background tools
+- Save articles with unique names and optional tags
+- Build outfits (free or slot-based); generate preview images
+- Organize outfits into categories; group categories into collections
+- Search and filter by tags; multi-select selection modals
+- Delete with confirmation; prevent deleting in-use articles
+- Zoom and edit previously saved outfits
+
+### Non-Functional
+- Mobile-first performance (touch-optimized, passive listeners)
+- Offline-first with seamless local fallback
+- Data integrity and privacy; no ads; explicit user control
+- Simple, predictable navigation; minimal cognitive load
+- Accessible UI (contrast, hit targets, keyboard-friendly on desktop)
+
+## User Benefits (How features help)
+- Background removal + brush/eraser: clean item cutouts for realistic outfit assembly
+- Slot-based builder: fast composition with consistent alignment
+- Tags + search + filters: quickly find items by season, use-case, or style
+- Hangers view: one place to browse saved outfits visually
+- Collections: plan capsules or seasonal sets by grouping categories
+- Offline support: capture and organize anytime; sync later if signed in
+- Dark mode + toasts: comfortable, unobtrusive, modern UX
+
+## Setup (quick)
+1) Clone the repo and open `index.html`
+2) Optional: configure Firebase Auth + Firestore in `app.js`
+3) Deploy with Firebase Hosting or any static host
+
+## License
+MIT
 ## Setup Instructions
 
 ### 1. Basic Setup
