@@ -993,7 +993,30 @@ class LookbookApp {
             this.categories.push(category);
             this.saveData();
             this.updateCategorySelect();
-            this.navigateTo('categories');
+            // If we came here from a collection's add flow, auto-attach and go back to that collection
+            if (this.pendingAddCategoryToCollection && this.pendingCollectionIdForCategory) {
+                const collection = this.collections.find(c => c.id === this.pendingCollectionIdForCategory);
+                if (collection) {
+                    if (!Array.isArray(collection.categoryIds)) collection.categoryIds = [];
+                    collection.categoryIds.push(category.id);
+                    this.saveData();
+                    this.showToast('Category created and added to collection!');
+                    // Clear pending flags
+                    this.pendingAddCategoryToCollection = false;
+                    this.pendingCollectionIdForCategory = null;
+                    // Return to the collection detail view
+                    this.currentCollection = collection;
+                    this.navigateTo('collectionDetail');
+                } else {
+                    // Fallback if collection not found
+                    this.pendingAddCategoryToCollection = false;
+                    this.pendingCollectionIdForCategory = null;
+                    this.navigateTo('collections');
+                }
+            } else {
+                // Normal flow: go back to categories
+                this.navigateTo('categories');
+            }
             
             // Reset form
             nameInput.value = '';
@@ -2271,7 +2294,10 @@ class LookbookApp {
             );
             
             if (availableCategories.length === 0) {
-                this.showToast('No available categories to add. Create a category first!', 'info');
+                // No categories exist to add; route to create-category flow and auto-link back
+                this.pendingAddCategoryToCollection = true;
+                this.pendingCollectionIdForCategory = this.currentCollection.id;
+                this.navigateTo('createCategory');
                 return;
             }
             
