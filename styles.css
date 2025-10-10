@@ -1477,6 +1477,16 @@ body.dark-mode .created-outfit-name {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* Ensure direct <img class="category-custom-icon"> is constrained (used in some views) */
+img.category-custom-icon {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 8px;
+    display: block;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 .category-card h3 {
     color: #6366f1;
     margin-bottom: 0.25rem;
@@ -2312,6 +2322,12 @@ body.dark-mode .created-outfit-name {
         width: 36px;
         height: 36px;
     }
+
+    /* Responsive size for direct <img class="category-custom-icon"> */
+    img.category-custom-icon {
+        width: 36px;
+        height: 36px;
+    }
     
     .category-card h3 {
         font-size: 0.8rem;
@@ -2435,6 +2451,11 @@ body.dark-mode .created-outfit-name {
     }
     
     .category-custom-icon img {
+        width: 32px;
+        height: 32px;
+    }
+
+    img.category-custom-icon {
         width: 32px;
         height: 32px;
     }
