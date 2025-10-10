@@ -841,6 +841,8 @@ class LookbookApp {
                 case 'viewArticles':
                     this.renderArticlesGrid();
                     this.renderCreatedOutfits();
+                    this.populateClosetTagFilters();
+                    this.bindClosetSearchEvents();
                     break;
                 case 'collections':
                     this.renderCollections();
@@ -948,6 +950,8 @@ class LookbookApp {
                 case 'viewArticles':
                     this.renderArticlesGrid();
                     this.renderCreatedOutfits();
+                    this.populateClosetTagFilters();
+                    this.bindClosetSearchEvents();
                     break;
                 case 'collections':
                     this.renderCollections();
@@ -1714,6 +1718,126 @@ class LookbookApp {
             this.renderArticles();
         } catch (error) {
             console.error('Error selecting tag filter:', error);
+        }
+    }
+    
+    // Populate tag filters for closet view
+    populateClosetTagFilters() {
+        try {
+            const tagSearchOptions = document.getElementById('closetTagSearchOptions');
+            if (!tagSearchOptions) return;
+            
+            // Get all unique tags from articles
+            const allTags = new Set();
+            this.articles.forEach(article => {
+                if (article.tags) {
+                    const tags = Array.isArray(article.tags) 
+                        ? article.tags.map(t => t.toString().trim().toLowerCase())
+                        : article.tags.split(',').map(tag => tag.trim().toLowerCase());
+                    tags.forEach(tag => {
+                        if (tag) allTags.add(tag);
+                    });
+                }
+            });
+            
+            // Clear existing options
+            tagSearchOptions.innerHTML = '';
+            
+            // Add "All" option
+            const allOption = document.createElement('div');
+            allOption.className = 'tag-search-option';
+            allOption.dataset.tag = 'all';
+            allOption.innerHTML = `
+                <input type="checkbox" id="closet-tag-all" checked>
+                <label for="closet-tag-all">All</label>
+            `;
+            tagSearchOptions.appendChild(allOption);
+            
+            // Add tag options
+            Array.from(allTags).sort().forEach(tag => {
+                const option = document.createElement('div');
+                option.className = 'tag-search-option';
+                option.dataset.tag = tag;
+                option.innerHTML = `
+                    <input type="checkbox" id="closet-tag-${tag.replace(/\s+/g, '-')}">
+                    <label for="closet-tag-${tag.replace(/\s+/g, '-')}">${tag}</label>
+                `;
+                tagSearchOptions.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error populating closet tag filters:', error);
+        }
+    }
+    
+    // Bind search events for closet view
+    bindClosetSearchEvents() {
+        try {
+            // Search input event
+            const searchInput = document.getElementById('closetSearchArticles');
+            if (searchInput) {
+                let searchDebounce;
+                searchInput.addEventListener('input', (e) => {
+                    const term = e.target.value;
+                    clearTimeout(searchDebounce);
+                    searchDebounce = setTimeout(() => {
+                        this.renderArticlesGrid();
+                    }, 120);
+                });
+            }
+            
+            // Tag search dropdown events
+            const tagSearchInput = document.getElementById('closetTagSearchInput');
+            const tagSearchDropdown = document.getElementById('closetTagSearchDropdown');
+            
+            if (tagSearchInput && tagSearchDropdown) {
+                tagSearchInput.addEventListener('click', () => {
+                    tagSearchDropdown.classList.toggle('hidden');
+                });
+                
+                // Close dropdown when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!tagSearchInput.contains(e.target) && !tagSearchDropdown.contains(e.target)) {
+                        tagSearchDropdown.classList.add('hidden');
+                    }
+                });
+                
+                // Handle tag selection
+                tagSearchDropdown.addEventListener('change', (e) => {
+                    if (e.target.type === 'checkbox') {
+                        this.updateClosetTagFilter();
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error binding closet search events:', error);
+        }
+    }
+    
+    // Update closet tag filter and re-render
+    updateClosetTagFilter() {
+        try {
+            const selectedTags = [];
+            const checkboxes = document.querySelectorAll('#closetTagSearchOptions input[type="checkbox"]:checked');
+            checkboxes.forEach(checkbox => {
+                const tag = checkbox.closest('.tag-search-option').dataset.tag;
+                if (tag) selectedTags.push(tag);
+            });
+            
+            // Update placeholder text
+            const placeholder = document.querySelector('#closetTagSearchInput .tag-search-placeholder');
+            if (placeholder) {
+                if (selectedTags.length === 0 || (selectedTags.length === 1 && selectedTags[0] === 'all')) {
+                    placeholder.textContent = 'Select tags to filter...';
+                } else {
+                    const displayTags = selectedTags.filter(tag => tag !== 'all');
+                    placeholder.textContent = displayTags.length > 0 ? displayTags.join(', ') : 'All';
+                }
+            }
+            
+            // Re-render articles with new filter
+            this.renderArticlesGrid();
+        } catch (error) {
+            console.error('Error updating closet tag filter:', error);
         }
     }
     
@@ -3584,19 +3708,53 @@ class LookbookApp {
                 return;
             }
             
-            console.log('Rendering articles grid, count:', this.articles.length);
+            // Get search and filter values for closet
+            const searchInput = document.getElementById('closetSearchArticles');
+            const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
             
-            if (this.articles.length === 0) {
+            // Get selected tags from checkboxes
+            const selectedTags = [];
+            const checkboxes = document.querySelectorAll('#closetTagSearchOptions input[type="checkbox"]:checked');
+            checkboxes.forEach(checkbox => {
+                const tag = checkbox.closest('.tag-search-option').dataset.tag;
+                if (tag) selectedTags.push(tag);
+            });
+            
+            // Filter articles
+            const filteredArticles = this.articles.filter(article => {
+                const tagsNormalized = Array.isArray(article.tags)
+                    ? article.tags.map(t => (t || '').toString().toLowerCase()).join(',')
+                    : ((article.tags || '').toString().toLowerCase());
+                const matchesSearch = !searchTerm ||
+                    (article.name && article.name.toLowerCase().includes(searchTerm)) ||
+                    tagsNormalized.includes(searchTerm);
+                
+                // Check if article matches any selected tags (or all if no specific tags selected)
+                const matchesTag = selectedTags.length === 0 || 
+                    selectedTags.includes('all') ||
+                    selectedTags.some(selectedTag => {
+                        if (selectedTag === 'all') return true;
+                        const articleTags = Array.isArray(article.tags) 
+                            ? article.tags.map(t => t.toString().toLowerCase())
+                            : (article.tags || '').toLowerCase().split(',').map(t => t.trim());
+                        return articleTags.includes(selectedTag.toLowerCase());
+                    });
+                
+                return matchesSearch && matchesTag;
+            });
+            
+            console.log('Rendering articles grid, count:', filteredArticles.length, 'of', this.articles.length);
+            
+            if (filteredArticles.length === 0) {
                 articlesGrid.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-icon">
                             <span class="material-icons">inventory_2</span>
                         </div>
-                        <h3>No Articles Yet</h3>
-                        <p>Add your first article of clothing to start building outfits!</p>
+                        <h3>No Articles Found</h3>
+                        <p>${this.articles.length === 0 ? 'Add your first article of clothing to start building outfits!' : 'Try adjusting your search or filter criteria.'}</p>
                         <button class="btn-primary" onclick="window.app.navigateTo('add-article')">
                             <span class="material-icons">add</span>
-                            <span>Add Article</span>
                         </button>
                     </div>
                 `;
@@ -3605,7 +3763,7 @@ class LookbookApp {
             
             articlesGrid.innerHTML = '';
             
-            this.articles.forEach(article => {
+            filteredArticles.forEach(article => {
                 const articleCard = document.createElement('div');
                 articleCard.className = 'article-card';
                 

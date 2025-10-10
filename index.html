@@ -48,7 +48,7 @@
         <!-- Main Navigation -->
         <nav id="mainNav" class="main-nav">
             <button class="nav-btn mui-btn" data-action="view-articles">
-                <span class="material-icons">inventory</span>
+                <span class="material-icons">checkroom</span>
                 <span>Closet</span>
             </button>
             <button class="nav-btn mui-btn" data-action="collections">
@@ -60,7 +60,7 @@
                 <span>Categories</span>
             </button>
             <button class="nav-btn mui-btn" data-action="add-outfit">
-                <span class="material-icons">checkroom</span>
+                <span class="material-icons">add</span>
                 <span>Create Outfit</span>
             </button>
             <span class="mui-divider" aria-hidden="true"></span>
@@ -265,6 +265,20 @@
                     <!-- View Articles View -->
             <div id="viewArticlesView" class="view">
                 <h2>Closet</h2>
+                <div class="search-section">
+                    <input type="text" id="closetSearchArticles" placeholder="Search articles by name or tags...">
+                    <div class="tag-search-container">
+                        <div class="tag-search-input" id="closetTagSearchInput">
+                            <span class="tag-search-placeholder">Select tags to filter...</span>
+                            <span class="tag-search-arrow">▼</span>
+                        </div>
+                        <div class="tag-search-dropdown hidden" id="closetTagSearchDropdown">
+                            <div class="tag-search-options" id="closetTagSearchOptions">
+                                <!-- Tag options will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="articles-header">
                     <button class="btn-primary" onclick="window.app.navigateTo('add-article')">
                         <span class="material-icons">add</span>
