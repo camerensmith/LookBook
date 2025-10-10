@@ -1,6 +1,6 @@
 # Lookbook – Closet, Outfits, and Collections (PWA)
 
-<video src="concepts/demo.mov" controls width="720" style="max-width:100%"></video>
+<video src="concepts/demo.mp4" controls width="720" style="max-width:100%"></video>
 
 Lookbook is a fast PWA to capture your closet, tag items, build outfits, and organize them into categories and collections – without ads or bloat.
 
