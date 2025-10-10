@@ -407,6 +407,30 @@ body {
     z-index: 10;
 }
 
+/* Delete button in zoom modal header */
+.modal-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.icon-btn.delete-btn {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-btn.delete-btn:hover {
+    background: #ef4444;
+    color: #fff;
+}
+
 #outfitZoomImage {
     z-index: 1;
 }

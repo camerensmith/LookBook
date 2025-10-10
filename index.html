@@ -390,12 +390,17 @@
 
             <!-- Outfit Zoom Modal -->
             <div id="outfitZoomModal" class="modal hidden">
-                <div class="modal-content" style="max-width: 90vw; max-height: 90vh;">
+                <div class="modal-content" style="max-width: 90vw; max-height: 90vh; position: relative;">
                     <div class="modal-header">
                         <h3 id="outfitZoomTitle">Outfit</h3>
-                        <button id="closeOutfitZoomModal" class="close-btn">
-                            <span class="material-icons">close</span>
-                        </button>
+                        <div class="modal-header-actions">
+                            <button id="deleteOutfitFromZoomBtn" class="icon-btn delete-btn" title="Delete Outfit">
+                                <span class="material-icons">delete</span>
+                            </button>
+                            <button id="closeOutfitZoomModal" class="close-btn">
+                                <span class="material-icons">close</span>
+                            </button>
+                        </div>
                     </div>
                     <div class="zoom-container">
                         <img id="outfitZoomImage" alt="Outfit" style="max-width:100%; max-height:70vh; display:block; margin:auto;">

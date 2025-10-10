@@ -2125,12 +2125,15 @@ class LookbookApp {
     
     bindCollectionFormEvents() {
         try {
+            // Prevent duplicate bindings when navigating back and forth
+            if (this._collectionFormBound) return;
             const collectionForm = document.getElementById('collectionForm');
             if (collectionForm) {
                 collectionForm.addEventListener('submit', (e) => {
                     e.preventDefault();
                     this.createCollection();
                 });
+                this._collectionFormBound = true;
             }
         } catch (error) {
             console.error('Error binding collection form events:', error);
@@ -2474,6 +2477,7 @@ class LookbookApp {
             const zoomIn = document.getElementById('zoomInBtn');
             const zoomOut = document.getElementById('zoomOutBtn');
             const zoomReset = document.getElementById('zoomResetBtn');
+            const deleteBtn = document.getElementById('deleteOutfitFromZoomBtn');
             if (!modal || !title || !img) return;
             title.textContent = outfit.name || 'Outfit';
             img.src = outfit.previewImage || '';
@@ -2484,6 +2488,16 @@ class LookbookApp {
             if (zoomOut) zoomOut.onclick = () => { scale = Math.max(0.5, scale - 0.2); apply(); };
             if (zoomReset) zoomReset.onclick = () => { scale = 1; apply(); };
             if (closeBtn) closeBtn.onclick = () => { modal.classList.add('hidden'); };
+            if (deleteBtn) {
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    // Set current outfit and reuse existing delete flow
+                    this.currentOutfit = outfit;
+                    this.deleteOutfit();
+                    // Close modal if still open
+                    modal.classList.add('hidden');
+                };
+            }
             modal.classList.remove('hidden');
         } catch (error) {
             console.error('Error opening outfit zoom:', error);
@@ -5358,6 +5372,10 @@ class LookbookApp {
                 // map slot -> item
                 const bySlot = {};
                 outfit.items.forEach(it => { if (it.slot) bySlot[it.slot] = it; });
+                // If no accessory, add class to center Body
+                if (!bySlot['accessory']) {
+                    grid.classList.add('no-accessory');
+                }
                 ['head','jacket','body','legs','feet','accessory'].forEach(slot => {
                     const it = bySlot[slot];
                     const content = grid.querySelector(`.slot[data-slot="${slot}"] .slot-content`);
