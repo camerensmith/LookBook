@@ -1,12 +1,12 @@
 # Lookbook – Closet, Outfits, and Collections (PWA)
 
-<video src="concepts/demo.mp4" controls width="720" style="max-width:100%"></video>
+https://raw.githubusercontent.com/camerensmith/LookBook/main/concepts/demo.mp4
 
 Lookbook is a fast PWA to capture your closet, tag items, build outfits, and organize them into categories and collections – without ads or bloat.
 
 Primary stakeholder: My girlfriend. She defined the acceptance criteria and guided feature planning. Her goals: an easy, simple, streamlined app to organize work/play/sleepwear, add seasonal/holiday groupings, and keep data trustworthy – no ads, minimal fluff, just the right amount of customization (tags, icons for categories/collections).
 
-## Product Overview (portfolio case study)
+## Product Overview
 
 - Problem: Existing apps were slow, buggy, ad-heavy, or felt noisy. Trust and speed were missing.
 - Outcome: A lean, responsive PWA that works offline, respects user intent, and syncs when signed in.
@@ -14,7 +14,7 @@ Primary stakeholder: My girlfriend. She defined the acceptance criteria and guid
 
 ## Feature Highlights
 
-### Closet (Articles)
+### Closet (this contains your aArticles)
 - Capture via camera or upload
 - Automatic background removal (client-side with manual brush/eraser tools)
 - Name + tag on the same screen; duplicate name validation
