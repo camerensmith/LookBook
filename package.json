@@ -1,40 +1,41 @@
 {
   "name": "lookbook-pwa",
-  "version": "1.0.0",
-  "description": "A Progressive Web App for managing clothing and creating outfits",
+  "version": "0.1.0",
+  "description": "A fast PWA to capture your closet, tag items, build outfits, and organize them into categories and collections – without ads or bloat.",
   "main": "index.html",
   "scripts": {
-    "start": "http-server -p 8000 -c-1",
-    "dev": "http-server -p 8000 -c-1 --cors",
-    "build": "echo 'No build step required for this PWA'",
-    "test": "echo 'No tests specified'"
+    "start": "python -m http.server 8000",
+    "dev": "python -m http.server 8000",
+    "build": "echo 'No build step required for static PWA'",
+    "deploy": "firebase deploy"
   },
   "keywords": [
     "pwa",
     "fashion",
-    "outfit",
-    "clothing",
+    "closet",
+    "outfits",
     "progressive-web-app",
-    "ios",
-    "mobile"
+    "firebase",
+    "mobile-first"
   ],
-  "author": "Your Name",
+  "author": "Cameron Smith",
   "license": "MIT",
-  "devDependencies": {
-    "http-server": "^14.1.1"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/camerensmith/LookBook.git"
   },
+  "bugs": {
+    "url": "https://github.com/camerensmith/LookBook/issues"
+  },
+  "homepage": "https://github.com/camerensmith/LookBook#readme",
   "engines": {
     "node": ">=14.0.0"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/yourusername/lookbook-pwa.git"
-  },
-  "bugs": {
-    "url": "https://github.com/yourusername/lookbook-pwa/issues"
-  },
-  "homepage": "https://github.com/yourusername/lookbook-pwa#readme",
-  "dependencies": {
-    "firebase": "^12.3.0"
-  }
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead",
+    "iOS >= 12",
+    "Chrome >= 70"
+  ]
 }

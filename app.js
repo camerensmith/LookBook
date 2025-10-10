@@ -2,6 +2,9 @@
 
 class LookbookApp {
     constructor() {
+        // App version
+        this.version = '0.1.0';
+        
         this.user = null;
         this.categories = [];
         this.articles = [];
@@ -3904,6 +3907,31 @@ class LookbookApp {
         } catch (error) {
             console.error('Error hiding toast:', error);
         }
+    }
+    
+    // Version information
+    getVersionInfo() {
+        return {
+            version: this.version,
+            buildDate: new Date().toISOString().split('T')[0],
+            features: [
+                'PWA Support',
+                'Offline-First Architecture', 
+                'Firebase Sync',
+                'Background Removal',
+                'Slot-Based Outfit Builder',
+                'Categories & Collections',
+                'Dark/Light Theme',
+                'Mobile Touch Support'
+            ]
+        };
+    }
+    
+    showVersionInfo() {
+        const info = this.getVersionInfo();
+        const message = `Lookbook v${info.version}\nBuild: ${info.buildDate}\nFeatures: ${info.features.length} enabled`;
+        this.showToast(message, 'info', 5000);
+        console.log('Lookbook Version Info:', info);
     }
     
     // Save Outfit Modal

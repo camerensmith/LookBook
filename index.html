@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Lookbook">
     <meta name="theme-color" content="#6366f1">
-    <title>Lookbook - Alice's Personal Style Manager</title>
+    <title>Lookbook v0.1.0 - Alice's Personal Style Manager</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
@@ -29,7 +29,10 @@
     <div id="app">
         <!-- Header -->
                 <header class="header">
-                    <img src="wordmark.png" alt="Lookbook" class="wordmark-logo">
+                    <div class="header-left">
+                        <img src="wordmark.png" alt="Lookbook" class="wordmark-logo">
+                        <span id="versionDisplay" class="version-display" onclick="window.app.showVersionInfo()" title="Click for version info">v0.1.0</span>
+                    </div>
                     <div class="header-controls">
                         <div id="syncStatus" class="sync-status hidden">
                             <span class="material-icons sync-icon">sync</span>

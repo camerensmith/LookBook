@@ -1,6 +1,7 @@
 {
-  "name": "Lookbook - Alice's Personal Style Manager",
+  "name": "Lookbook v0.1.0 - Alice's Personal Style Manager",
   "short_name": "Lookbook",
+  "version": "0.1.0",
   "description": "Create categories, add clothing articles with background removal, and build amazing outfits",
   "start_url": "/",
   "display": "standalone",

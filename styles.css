@@ -33,6 +33,29 @@ body {
     z-index: 100;
 }
 
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.version-display {
+    font-size: 0.75rem;
+    opacity: 0.8;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    background: rgba(255, 255, 255, 0.1);
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.version-display:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
 .header-controls {
     display: flex;
     align-items: center;

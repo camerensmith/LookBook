@@ -1,5 +1,7 @@
 # Lookbook – Closet, Outfits, and Collections (PWA)
 
+**Version 0.1.0** | [![Release](https://img.shields.io/badge/release-v0.1.0-blue.svg)](https://github.com/camerensmith/LookBook/releases) | [![PWA](https://img.shields.io/badge/PWA-enabled-purple.svg)](https://web.dev/progressive-web-apps/)
+
 https://raw.githubusercontent.com/camerensmith/LookBook/main/concepts/demo.mp4
 
 Lookbook is a fast PWA to capture your closet, tag items, build outfits, and organize them into categories and collections – without ads or bloat.
@@ -64,6 +66,19 @@ Primary stakeholder: My girlfriend. She defined the acceptance criteria and guid
 - Zoom controls layered above image; added delete within zoom
 - Closet and Categories empty states centered on mobile
 - Removed alerts in favor of toasts; added theme toggle; replaced header text with `wordmark.png`
+
+## Version History
+
+### v0.1.0 (Current Release)
+**Initial Feature-Complete Release**
+- ✅ Complete PWA with offline-first architecture
+- ✅ Closet management with camera/upload and background removal
+- ✅ Slot-based outfit builder with drag-and-drop
+- ✅ Categories and Collections organization system
+- ✅ Firebase Auth + Firestore cloud sync
+- ✅ Mobile-optimized touch interactions
+- ✅ Dark/Light theme support
+- ✅ Search and filtering across all content types
 
 ## Development Timeline (high-level)
 1) Foundation: PWA shell, views, basic navigation; LocalStorage persistence
