@@ -834,6 +834,9 @@ class LookbookApp {
                     break;
                 case 'addArticle':
                     this.resetArticleForm();
+                    // Ensure the view is scrolled to top each time
+                    const addArticleView = document.getElementById('addArticleView');
+                    if (addArticleView) addArticleView.scrollTop = 0;
                     break;
                 case 'viewArticles':
                     this.renderArticlesGrid();
@@ -1448,6 +1451,14 @@ class LookbookApp {
             const form = document.getElementById('articleForm');
             if (form) {
                 form.classList.remove('hidden');
+                // Reset scroll and fields when explicitly opening the form for a new article
+                const addArticleView = document.getElementById('addArticleView');
+                if (addArticleView) addArticleView.scrollTop = 0;
+                // Only reset inputs if we don't have temp values from editor
+                const nameInput = document.getElementById('articleName');
+                const tagsInput = document.getElementById('articleTags');
+                if (nameInput && !this.tempArticleName) nameInput.value = '';
+                if (tagsInput && !this.tempArticleTags) tagsInput.value = '';
                 
                 // Populate form with saved details if available
                 const nameInput = document.getElementById('articleName');
@@ -1947,7 +1958,17 @@ class LookbookApp {
                     });
                     
                     this.saveData();
-                    this.renderCreatedOutfits();
+                    // Stay on Closet if currently there; otherwise refresh category detail if open
+                    if (this.currentView === 'viewArticles') {
+                        this.renderCreatedOutfits();
+                    } else if (this.currentView === 'categoryDetail') {
+                        const container = document.getElementById('categoryOutfits');
+                        if (this.currentCategory && container) {
+                            this.renderCategoryOutfits(this.currentCategory, container);
+                        }
+                    } else {
+                        this.renderCreatedOutfits();
+                    }
                     this.showToast('Outfit deleted successfully!');
                 }
             );
