@@ -1461,15 +1461,9 @@ class LookbookApp {
                 if (tagsInput && !this.tempArticleTags) tagsInput.value = '';
                 
                 // Populate form with saved details if available
-                const nameInput = document.getElementById('articleName');
-                const tagsInput = document.getElementById('articleTags');
                 
-                if (nameInput && this.tempArticleName) {
-                    nameInput.value = this.tempArticleName;
-                }
-                if (tagsInput && this.tempArticleTags) {
-                    tagsInput.value = this.tempArticleTags;
-                }
+                if (nameInput && this.tempArticleName) nameInput.value = this.tempArticleName;
+                if (tagsInput && this.tempArticleTags) tagsInput.value = this.tempArticleTags;
                 
                 console.log('Article form shown with pre-filled data');
             }
