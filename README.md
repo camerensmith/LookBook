@@ -2,7 +2,11 @@
 
 **Version 0.1.0** | [![Release](https://img.shields.io/badge/release-v0.1.0-blue.svg)](https://github.com/camerensmith/LookBook/releases) | [![PWA](https://img.shields.io/badge/PWA-enabled-purple.svg)](https://web.dev/progressive-web-apps/)
 
-https://raw.githubusercontent.com/camerensmith/LookBook/main/concepts/demo.mp4
+
+
+https://github.com/user-attachments/assets/e8137544-4bfc-4d21-a10c-cd697d97f4d6
+
+
 
 Lookbook is a fast PWA to capture your closet, tag items, build outfits, and organize them into categories and collections – without ads or bloat.
 
