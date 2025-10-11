@@ -1461,18 +1461,20 @@ class LookbookApp {
                 // Reset scroll and fields when explicitly opening the form for a new article
                 const addArticleView = document.getElementById('addArticleView');
                 if (addArticleView) addArticleView.scrollTop = 0;
-                // Only reset inputs if we don't have temp values from editor
+                
+                // Always reset form fields when showing the form for a new article
                 const nameInput = document.getElementById('articleName');
                 const tagsInput = document.getElementById('articleTags');
-                if (nameInput && !this.tempArticleName) nameInput.value = '';
-                if (tagsInput && !this.tempArticleTags) tagsInput.value = '';
                 
-                // Populate form with saved details if available
+                // Clear any temporary values first
+                this.tempArticleName = null;
+                this.tempArticleTags = null;
                 
-                if (nameInput && this.tempArticleName) nameInput.value = this.tempArticleName;
-                if (tagsInput && this.tempArticleTags) tagsInput.value = this.tempArticleTags;
+                // Reset form fields
+                if (nameInput) nameInput.value = '';
+                if (tagsInput) tagsInput.value = '';
                 
-                console.log('Article form shown with pre-filled data');
+                console.log('Article form shown and reset');
             }
         } catch (error) {
             console.error('Error showing article form:', error);
@@ -1576,6 +1578,8 @@ class LookbookApp {
         try {
             this.capturedImage = null;
             this.processedImage = null;
+            this.tempArticleName = null;
+            this.tempArticleTags = null;
             
             const preview = document.getElementById('cameraPreview');
             const processed = document.getElementById('processedImage');
@@ -1588,6 +1592,12 @@ class LookbookApp {
             if (form) form.classList.add('hidden');
             if (nameInput) nameInput.value = '';
             if (tagsInput) tagsInput.value = '';
+            
+            // Clear any captured/processed images
+            const capturedImg = document.getElementById('capturedImage');
+            const finalImg = document.getElementById('finalImage');
+            if (capturedImg) capturedImg.src = '';
+            if (finalImg) finalImg.src = '';
             
             console.log('Article form reset');
         } catch (error) {
