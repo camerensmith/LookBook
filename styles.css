@@ -7,9 +7,9 @@
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
     min-height: 100vh;
-    color: #1a1a1a;
+	color: #000000;
     overflow-x: hidden;
     line-height: 1.6;
     font-weight: 400;
@@ -211,19 +211,16 @@ body {
 
 /* Modern Headings */
 h1, h2, h3, h4, h5, h6 {
-    font-weight: 600;
-    line-height: 1.3;
-    color: #1a1a1a;
-    margin-bottom: 1rem;
+	font-weight: 600;
+	line-height: 1.3;
+	color: #000000;
+	margin-bottom: 1rem;
 }
 
 h2 {
-    font-size: 1.75rem;
-    margin-bottom: 1.5rem;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+	font-size: 1.75rem;
+	margin-bottom: 1.5rem;
+	color: #000000;
 }
 
 .view {
@@ -3121,4 +3118,298 @@ img.category-custom-icon {
     .create-new-card h3 {
         color: #000;
     }
+}
+
+/* Dark Theme Overrides */
+[data-theme="dark"] body {
+	background: radial-gradient(1200px 800px at 20% 0%, #0a1220 0%, #0a1220 50%, #08101d 100%);
+	color: #e5e7eb;
+}
+
+[data-theme="dark"] .header {
+	background: rgba(10, 14, 23, 0.9);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+	box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="dark"] .version-display {
+	background: rgba(59, 130, 246, 0.12);
+	border: 1px solid rgba(59, 130, 246, 0.25);
+	color: #93c5fd;
+}
+
+[data-theme="dark"] .menu-btn.mui-btn {
+	background: rgba(255, 255, 255, 0.04);
+	color: #c7d2fe;
+	border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+[data-theme="dark"] .main-nav {
+	background: rgba(10, 14, 23, 0.85);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+	box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="dark"] .nav-btn,
+[data-theme="dark"] .nav-btn.mui-btn {
+	background: linear-gradient(135deg, #1f2937, #0f172a);
+	color: #e5e7eb;
+	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .nav-btn:hover,
+[data-theme="dark"] .nav-btn.mui-btn:hover {
+	background: linear-gradient(135deg, #111827, #0b1220);
+}
+
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4,
+[data-theme="dark"] h5,
+[data-theme="dark"] h6 {
+	color: #e5e7eb;
+}
+
+[data-theme="dark"] h2 {
+	background: linear-gradient(135deg, #93c5fd, #c7d2fe);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
+}
+
+/* Cards & Surfaces */
+[data-theme="dark"] .category-card,
+[data-theme="dark"] .article-card,
+[data-theme="dark"] .created-outfit-card,
+[data-theme="dark"] .collection-card,
+[data-theme="dark"] .outfit-card,
+[data-theme="dark"] .outfit-display,
+[data-theme="dark"] .article-selector,
+[data-theme="dark"] .outfit-canvas,
+[data-theme="dark"] .camera-section,
+[data-theme="dark"] .form,
+[data-theme="dark"] .empty-state {
+	background: rgba(13, 19, 33, 0.92);
+	border-color: rgba(255, 255, 255, 0.06);
+	box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .collection-icon,
+[data-theme="dark"] .category-selection-icon {
+	background: linear-gradient(135deg, #1e293b, #0b1220);
+}
+
+[data-theme="dark"] .article-name,
+[data-theme="dark"] .category-card h3,
+[data-theme="dark"] .outfit-card h3,
+[data-theme="dark"] .created-outfit-name {
+	color: #f3f4f6;
+}
+
+[data-theme="dark"] .article-tags,
+[data-theme="dark"] .category-card .outfit-count,
+[data-theme="dark"] .outfit-card p,
+[data-theme="dark"] .help-text,
+[data-theme="dark"] .loading-spinner {
+	color: #a1a1aa;
+}
+
+/* Inputs */
+[data-theme="dark"] .form input,
+[data-theme="dark"] .form select,
+[data-theme="dark"] .search-section input,
+[data-theme="dark"] .tag-search-input,
+[data-theme="dark"] .mui-input {
+	background: rgba(10, 14, 23, 0.9);
+	border-color: #334155;
+	color: #e5e7eb;
+}
+
+[data-theme="dark"] .tag-search-placeholder {
+	color: #94a3b8;
+}
+
+[data-theme="dark"] .tag-search-dropdown {
+	background: rgba(10, 14, 23, 0.98);
+	border-color: #334155;
+}
+
+[data-theme="dark"] .tag-search-option:hover {
+	background: rgba(99, 102, 241, 0.12);
+}
+
+/* Buttons */
+[data-theme="dark"] .btn-primary {
+	background: linear-gradient(135deg, #1d4ed8, #4338ca);
+	box-shadow: 0 10px 30px rgba(37, 99, 235, 0.35);
+}
+
+[data-theme="dark"] .btn-primary:hover:not(:disabled) {
+	background: linear-gradient(135deg, #1e40af, #3730a3);
+	box-shadow: 0 16px 40px rgba(37, 99, 235, 0.45);
+}
+
+[data-theme="dark"] .btn-secondary {
+	background: rgba(10, 14, 23, 0.9);
+	color: #93c5fd;
+	border-color: #3b82f6;
+	box-shadow: 0 4px 16px rgba(59, 130, 246, 0.15);
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+	background: rgba(17, 24, 39, 0.95);
+	color: #e5e7eb;
+}
+
+[data-theme="dark"] .btn-danger {
+	background: linear-gradient(135deg, #dc2626, #b91c1c);
+}
+
+/* Lists & grids */
+[data-theme="dark"] .outfit-preview,
+[data-theme="dark"] .outfit-selection-preview {
+	background: #0b1220;
+}
+
+[data-theme="dark"] .outfit-selection-card,
+[data-theme="dark"] .category-selection-card {
+	background: rgba(13, 19, 33, 0.92);
+	border-color: #334155;
+}
+
+[data-theme="dark"] .outfit-selection-card.selected,
+[data-theme="dark"] .category-selection-card.selected {
+	background: rgba(59, 130, 246, 0.08);
+	border-color: #60a5fa;
+}
+
+/* Builder slots */
+[data-theme="dark"] .slot {
+	background: rgba(6, 9, 18, 0.9);
+	border-color: #334155;
+}
+
+[data-theme="dark"] .slot-label {
+	background: rgba(6, 9, 18, 0.9);
+	color: #94a3b8;
+}
+
+[data-theme="dark"] .outfit-section .outfit-canvas-area {
+	background: rgba(2, 6, 23, 0.6);
+	border-color: #334155;
+}
+
+/* Modals & Toasts */
+[data-theme="dark"] .modal {
+	background: rgba(2, 6, 23, 0.8);
+}
+
+[data-theme="dark"] .modal-content {
+	background: rgba(10, 14, 23, 0.98);
+	border-color: rgba(255, 255, 255, 0.06);
+	box-shadow: 0 24px 80px rgba(0, 0, 0, 0.65);
+}
+
+[data-theme="dark"] .modal-header {
+	background: #0b1220;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .close-btn {
+	color: #9ca3af;
+}
+
+[data-theme="dark"] .close-btn:hover {
+	background: rgba(148, 163, 184, 0.12);
+}
+
+[data-theme="dark"] .toast {
+	background: rgba(10, 14, 23, 0.98);
+	border-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .toast-message {
+	color: #e5e7eb;
+}
+
+/* Tags, chips */
+[data-theme="dark"] .selected-tag {
+	background: #3b82f6;
+	color: #0b1220;
+}
+
+[data-theme="dark"] .collection-category-tag {
+	background: rgba(59, 130, 246, 0.12);
+	color: #93c5fd;
+}
+
+/* Icons & accents */
+[data-theme="dark"] .category-icon,
+[data-theme="dark"] .outfit-icon,
+[data-theme="dark"] .create-icon,
+[data-theme="dark"] .empty-icon {
+	color: #93c5fd;
+}
+
+/* Dividers and subtle backgrounds */
+[data-theme="dark"] .created-outfits-section {
+	border-top: 2px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Delete / danger styles remain vivid on dark */
+[data-theme="dark"] .delete-btn {
+	background: rgba(239, 68, 68, 0.12);
+	border-color: rgba(239, 68, 68, 0.3);
+	color: #fca5a5;
+}
+
+/* MUI-like accents on dark */
+[data-theme="dark"] .mui-divider {
+	background: rgba(255, 255, 255, 0.08);
+}
+
+/* Editor */
+[data-theme="dark"] .image-preview-area {
+	background: #0b1220;
+	border-right: 1px solid #1f2937;
+}
+
+[data-theme="dark"] #imageCanvas {
+	border-color: #1f2937;
+}
+
+[data-theme="dark"] .editor-controls,
+[data-theme="dark"] .tool-btn {
+	background: rgba(10, 14, 23, 0.98);
+}
+
+[data-theme="dark"] .tool-btn {
+	border: 1px solid #1f2937;
+	color: #cbd5e1;
+}
+
+[data-theme="dark"] .tool-btn.active {
+	background: #1d4ed8;
+	border-color: #1d4ed8;
+	color: #fff;
+}
+
+[data-theme="dark"] .tool-btn:hover {
+	background: rgba(29, 78, 216, 0.15);
+	border-color: #1d4ed8;
+}
+
+/* Sync/status pills */
+[data-theme="dark"] .sync-status {
+	background: rgba(59, 130, 246, 0.12);
+	color: #93c5fd;
+}
+[data-theme="dark"] .sync-status.syncing {
+	background: rgba(34, 197, 94, 0.15);
+	color: #86efac;
+}
+[data-theme="dark"] .sync-status.error {
+	background: rgba(239, 68, 68, 0.15);
+	color: #fca5a5;
 }

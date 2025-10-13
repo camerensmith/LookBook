@@ -672,10 +672,10 @@ class LookbookApp {
                     }
                 };
                 const stored = localStorage.getItem('lookbook_theme');
-                const initial = stored || 'light';
+                const initial = stored || 'dark';
                 applyTheme(initial);
                 themeToggleBtn.addEventListener('click', () => {
-                    const current = document.documentElement.getAttribute('data-theme') || 'light';
+                    const current = document.documentElement.getAttribute('data-theme') || 'dark';
                     const next = current === 'light' ? 'dark' : 'light';
                     localStorage.setItem('lookbook_theme', next);
                     applyTheme(next);
