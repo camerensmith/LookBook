@@ -2511,6 +2511,39 @@ img.category-custom-icon {
     100% { transform: rotate(360deg); }
 }
 
+/* Mobile Recommendation Modal */
+.mobile-recommendation-modal {
+    z-index: 10001; /* Higher than other modals */
+}
+
+.mobile-recommendation-content {
+    max-width: 500px;
+    text-align: center;
+}
+
+.mobile-recommendation-body {
+    padding: 1.5rem 0;
+}
+
+.mobile-recommendation-body p {
+    margin: 0;
+    line-height: 1.6;
+    color: #374151;
+}
+
+.mobile-recommendation-body p:first-child {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #1f2937;
+}
+
+/* Hide mobile recommendation modal on mobile devices */
+@media (max-width: 768px) {
+    .mobile-recommendation-modal {
+        display: none !important;
+    }
+}
+
 /* Utility Classes */
 .hidden {
     display: none !important;

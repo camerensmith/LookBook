@@ -74,6 +74,9 @@ class LookbookApp {
                 this.updateCategorySelect();
             }
             
+            // Show mobile recommendation modal for desktop users
+            this.checkAndShowMobileRecommendation();
+            
             console.log('App initialized successfully');
         } catch (error) {
             console.error('Error initializing app:', error);
@@ -656,6 +659,32 @@ class LookbookApp {
                 closeAuthBtn.addEventListener('click', () => {
                     const modal = document.getElementById('authModal');
                     if (modal) modal.classList.add('hidden');
+                });
+            }
+
+            // Mobile recommendation modal events
+            const closeMobileRecommendationBtn = document.getElementById('closeMobileRecommendationBtn');
+            const dismissMobileRecommendationBtn = document.getElementById('dismissMobileRecommendationBtn');
+            const mobileRecommendationModal = document.getElementById('mobileRecommendationModal');
+            
+            if (closeMobileRecommendationBtn) {
+                closeMobileRecommendationBtn.addEventListener('click', () => {
+                    this.closeMobileRecommendationModal();
+                });
+            }
+            
+            if (dismissMobileRecommendationBtn) {
+                dismissMobileRecommendationBtn.addEventListener('click', () => {
+                    this.closeMobileRecommendationModal(true);
+                });
+            }
+            
+            // Close modal when clicking outside
+            if (mobileRecommendationModal) {
+                mobileRecommendationModal.addEventListener('click', (e) => {
+                    if (e.target === mobileRecommendationModal) {
+                        this.closeMobileRecommendationModal();
+                    }
                 });
             }
 
@@ -3942,6 +3971,52 @@ class LookbookApp {
         const message = `Lookbook v${info.version}\nBuild: ${info.buildDate}\nFeatures: ${info.features.length} enabled`;
         this.showToast(message, 'info', 5000);
         console.log('Lookbook Version Info:', info);
+    }
+    
+    // Mobile recommendation modal functions
+    checkAndShowMobileRecommendation() {
+        // Only show on desktop (non-mobile) devices
+        if (this.isMobile()) {
+            return;
+        }
+        
+        // Check if user has dismissed it before
+        const dismissed = localStorage.getItem('lookbook_mobile_recommendation_dismissed');
+        if (dismissed === 'true') {
+            return;
+        }
+        
+        // Show modal after a short delay for better UX
+        setTimeout(() => {
+            this.showMobileRecommendationModal();
+        }, 1000);
+    }
+    
+    showMobileRecommendationModal() {
+        try {
+            const modal = document.getElementById('mobileRecommendationModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+            }
+        } catch (error) {
+            console.error('Error showing mobile recommendation modal:', error);
+        }
+    }
+    
+    closeMobileRecommendationModal(rememberDismissal = false) {
+        try {
+            const modal = document.getElementById('mobileRecommendationModal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+            
+            // Remember dismissal if user clicked "Got it" button
+            if (rememberDismissal) {
+                localStorage.setItem('lookbook_mobile_recommendation_dismissed', 'true');
+            }
+        } catch (error) {
+            console.error('Error closing mobile recommendation modal:', error);
+        }
     }
     
     // Save Outfit Modal

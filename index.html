@@ -673,6 +673,28 @@
         <p>Processing image...</p>
     </div>
 
+    <!-- Mobile Recommendation Modal -->
+    <div id="mobileRecommendationModal" class="modal mobile-recommendation-modal hidden">
+        <div class="modal-content mobile-recommendation-content">
+            <div class="modal-header">
+                <h3 style="display: flex; align-items: center; gap: 8px;">
+                    <span class="material-icons">phone_android</span>
+                    Mobile Experience Recommended
+                </h3>
+                <button id="closeMobileRecommendationBtn" class="close-btn">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <div class="mobile-recommendation-body">
+                <p>For optimal experience, please use a mobile device.</p>
+                <p style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">This app is designed primarily for mobile use and may not function optimally on desktop browsers.</p>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-primary" id="dismissMobileRecommendationBtn">Got it</button>
+            </div>
+        </div>
+    </div>
+
         <!-- Firebase (compat) - insert your config in app.js -->
         <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
         <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
