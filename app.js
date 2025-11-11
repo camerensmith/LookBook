@@ -10,7 +10,7 @@ class LookbookApp {
         this.articles = [];
         this.outfits = [];
         this.collections = [];
-        this.currentView = 'categories';
+        this.currentView = 'addOutfit';
         this.currentCategory = null;
         this.currentOutfit = null;
         this.currentCollection = null;
