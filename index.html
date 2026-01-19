@@ -8,14 +8,12 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Lookbook">
     <meta name="theme-color" content="#6366f1">
-    <title>Lookbook v0.1.0 - Alice's Personal Style Manager</title>
+    <title>Lookbook Alpha - Alice's Personal Style Manager</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
     <link rel="stylesheet" href="styles.css">
     
-    <!-- MUI Web Components -->
-    <script type="module" src="https://unpkg.com/@mui/material@latest/umd/material-ui.development.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -33,18 +31,31 @@
         <!-- Header -->
                 <header class="header">
                     <div class="header-left">
-                        <img src="wordmark.png" alt="Lookbook" class="wordmark-logo">
-                        <span id="versionDisplay" class="version-display" onclick="window.app.showVersionInfo()" title="Click for version info">v0.1.0</span>
+                        <img src="wordmark.png" alt="Lookbook" class="wordmark-logo wordmark-dark">
+                        <img src="wordmarklight.png" alt="Lookbook" class="wordmark-logo wordmark-light">
+                        <span id="versionDisplay" class="version-display" onclick="window.app.showVersionInfo()" title="Click for version info">Alpha</span>
                     </div>
                     <div class="header-controls">
                         <div id="syncStatus" class="sync-status hidden">
                             <span class="material-icons sync-icon">sync</span>
                             <span class="sync-text">Syncing...</span>
                         </div>
-                        <button id="authBtn" class="menu-btn mui-btn">
-                            <span class="material-icons">account_circle</span>
-                            <span>Sign in</span>
-                        </button>
+                        <div class="profile-menu-container">
+                            <button id="authBtn" class="menu-btn mui-btn profile-btn">
+                                <span class="material-icons" id="authBtnIcon">account_circle</span>
+                                <span id="authBtnText">Sign in</span>
+                            </button>
+                            <div id="profileMenu" class="profile-menu hidden">
+                                <button id="settingsBtn" class="profile-menu-item">
+                                    <span class="material-icons">settings</span>
+                                    <span>Settings</span>
+                                </button>
+                                <button id="signOutBtn" class="profile-menu-item">
+                                    <span class="material-icons">logout</span>
+                                    <span>Sign Out</span>
+                                </button>
+                            </div>
+                        </div>
                         <button id="themeToggleBtn" class="menu-btn mui-btn" title="Toggle theme">
                             <span id="themeToggleIcon" class="material-icons">dark_mode</span>
                         </button>
@@ -55,21 +66,20 @@
         <nav id="mainNav" class="main-nav">
             <button class="nav-btn mui-btn" data-action="view-articles">
                 <span class="material-icons">checkroom</span>
-                <span>Closet</span>
+                <span>Your Closet</span>
             </button>
             <button class="nav-btn mui-btn" data-action="collections">
                 <span class="material-icons">collections</span>
                 <span>Collections</span>
             </button>
             <button class="nav-btn mui-btn" data-action="categories">
-                <span class="material-icons">folder</span>
+                <span class="material-icons">category</span>
                 <span>Categories</span>
             </button>
             <button class="nav-btn mui-btn" data-action="add-outfit">
-                <span class="material-icons">add</span>
+                <span class="material-icons">settings_accessibility</span>
                 <span>Create Outfit</span>
             </button>
-            <span class="mui-divider" aria-hidden="true"></span>
             <button class="nav-btn mui-btn" data-action="add-article">
                 <span class="material-icons">add_a_photo</span>
                 <span>Add Article</span>
@@ -270,7 +280,7 @@
 
                     <!-- View Articles View -->
             <div id="viewArticlesView" class="view">
-                <h2>Closet</h2>
+                <h2>Your Closet</h2>
                 <div class="search-section">
                     <input type="text" id="closetSearchArticles" placeholder="Search articles by name or tags...">
                     <div class="tag-search-container">
@@ -489,6 +499,33 @@
                     <div class="modal-actions">
                         <button type="button" class="btn-secondary" onclick="window.app.closeSelectCategoriesModal()">Cancel</button>
                         <button type="button" class="btn-primary" id="acceptSelectedCategories">Add Categories</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Select Article for Slot Modal -->
+            <div id="selectArticleForSlotModal" class="modal hidden">
+                <div class="modal-content select-article-modal">
+                    <div class="modal-header">
+                        <h3 id="selectArticleSlotTitle">Select Article</h3>
+                        <button id="closeSelectArticleForSlotBtn" class="close-btn">
+                            <span class="material-icons">close</span>
+                        </button>
+                    </div>
+                    <div class="articles-selection-container">
+                        <div id="slotArticlesList" class="articles-list">
+                            <!-- Articles will be populated here -->
+                        </div>
+                        <div id="slotArticlesEmpty" class="empty-state hidden">
+                            <div class="empty-icon">
+                                <span class="material-icons">inventory_2</span>
+                            </div>
+                            <h3>No Articles Available</h3>
+                            <p>Add articles to your closet first</p>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="window.app.closeSelectArticleForSlotModal()">Cancel</button>
                     </div>
                 </div>
             </div>

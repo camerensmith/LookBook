@@ -639,13 +639,17 @@ class LookbookApp {
 
             // Auth UI events
             const authBtn = document.getElementById('authBtn');
+            const profileMenu = document.getElementById('profileMenu');
+            const signOutBtn = document.getElementById('signOutBtn');
+            const settingsBtn = document.getElementById('settingsBtn');
+            
             if (authBtn) {
-                authBtn.addEventListener('click', async () => {
+                authBtn.addEventListener('click', async (e) => {
                     if (this.user) {
-                        try {
-                            await firebase.auth().signOut();
-                        } catch (err) {
-                            console.error('Sign out error:', err);
+                        // Toggle profile menu
+                        e.stopPropagation();
+                        if (profileMenu) {
+                            profileMenu.classList.toggle('hidden');
                         }
                     } else {
                         const modal = document.getElementById('authModal');
@@ -653,6 +657,39 @@ class LookbookApp {
                     }
                 });
             }
+            
+            // Handle sign out button
+            if (signOutBtn) {
+                signOutBtn.addEventListener('click', async () => {
+                    try {
+                        await firebase.auth().signOut();
+                        if (profileMenu) {
+                            profileMenu.classList.add('hidden');
+                        }
+                    } catch (err) {
+                        console.error('Sign out error:', err);
+                        this.showToast('Error signing out. Please try again.', 'error');
+                    }
+                });
+            }
+            
+            // Handle settings button
+            if (settingsBtn) {
+                settingsBtn.addEventListener('click', () => {
+                    // TODO: Implement settings functionality
+                    this.showToast('Settings coming soon!', 'info');
+                    if (profileMenu) {
+                        profileMenu.classList.add('hidden');
+                    }
+                });
+            }
+            
+            // Close profile menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (profileMenu && !profileMenu.contains(e.target) && authBtn && !authBtn.contains(e.target)) {
+                    profileMenu.classList.add('hidden');
+                }
+            });
 
             const closeAuthBtn = document.getElementById('closeAuthBtn');
             if (closeAuthBtn) {
@@ -684,6 +721,25 @@ class LookbookApp {
                 mobileRecommendationModal.addEventListener('click', (e) => {
                     if (e.target === mobileRecommendationModal) {
                         this.closeMobileRecommendationModal();
+                    }
+                });
+            }
+
+            // Select Article for Slot Modal events
+            const closeSelectArticleForSlotBtn = document.getElementById('closeSelectArticleForSlotBtn');
+            const selectArticleForSlotModal = document.getElementById('selectArticleForSlotModal');
+            
+            if (closeSelectArticleForSlotBtn) {
+                closeSelectArticleForSlotBtn.addEventListener('click', () => {
+                    this.closeSelectArticleForSlotModal();
+                });
+            }
+            
+            // Close modal when clicking outside
+            if (selectArticleForSlotModal) {
+                selectArticleForSlotModal.addEventListener('click', (e) => {
+                    if (e.target === selectArticleForSlotModal) {
+                        this.closeSelectArticleForSlotModal();
                     }
                 });
             }
@@ -2732,7 +2788,7 @@ class LookbookApp {
                 slots.forEach(slot => {
                     slot.addEventListener('dragover', (e) => {
                         e.preventDefault();
-                        slot.style.borderColor = '#8b5cf6';
+                        slot.style.borderColor = '#8f1250';
                     });
                     slot.addEventListener('dragleave', (e) => {
                         e.preventDefault();
@@ -2749,6 +2805,16 @@ class LookbookApp {
                             this.renderSlots();
                             this.updateSaveButton();
                         }
+                    });
+                    
+                    // Add click handler to open article selection modal
+                    slot.addEventListener('click', (e) => {
+                        // Don't trigger if clicking on an image or if dragging
+                        if (e.target.tagName === 'IMG' || this.isDragging) {
+                            return;
+                        }
+                        const key = slot.dataset.slot;
+                        this.showSelectArticleForSlotModal(key);
                     });
                 });
             }
@@ -3612,7 +3678,7 @@ class LookbookApp {
                 categoriesList.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-icon">
-                            <span class="material-icons">folder_open</span>
+                            <span class="material-icons">category</span>
                         </div>
                         <h3>No Categories Yet</h3>
                         <p>Categories group your outfits.</p>
@@ -3665,10 +3731,10 @@ class LookbookApp {
             
             const outfitCount = outfitCounts[category.id] || 0;
             
-            // Use custom icon if available, otherwise show default folder icon
+            // Use custom icon if available, otherwise show default category icon
             const iconContent = category.icon 
                 ? `<div class="category-custom-icon"><img src="${category.icon}" alt="${category.name}"></div>`
-                : `<div class="category-icon"><span class="material-icons">folder</span></div>`;
+                : `<div class="category-icon"><span class="material-icons">category</span></div>`;
             
             categoryElement.innerHTML = `
                 ${iconContent}
@@ -4016,6 +4082,124 @@ class LookbookApp {
             }
         } catch (error) {
             console.error('Error closing mobile recommendation modal:', error);
+        }
+    }
+    
+    // Select Article for Slot Modal
+    showSelectArticleForSlotModal(slotKey) {
+        try {
+            // Check if there are any articles
+            if (!this.articles || this.articles.length === 0) {
+                this.showToast('No articles available. Add articles to your closet first.', 'info');
+                return;
+            }
+            
+            const modal = document.getElementById('selectArticleForSlotModal');
+            const title = document.getElementById('selectArticleSlotTitle');
+            const articlesList = document.getElementById('slotArticlesList');
+            const emptyState = document.getElementById('slotArticlesEmpty');
+            
+            if (!modal || !title || !articlesList) {
+                console.error('Select article modal elements not found');
+                return;
+            }
+            
+            // Store the slot key for later use
+            this.selectedSlotKey = slotKey;
+            
+            // Set title
+            const slotNames = {
+                head: 'Head',
+                jacket: 'Jacket',
+                body: 'Body',
+                legs: 'Legs',
+                feet: 'Feet',
+                accessory: 'Accessory'
+            };
+            title.textContent = `Select Article for ${slotNames[slotKey] || slotKey}`;
+            
+            // Clear previous articles
+            articlesList.innerHTML = '';
+            
+            // Show articles
+            if (this.articles.length === 0) {
+                if (emptyState) emptyState.classList.remove('hidden');
+                articlesList.classList.add('hidden');
+            } else {
+                if (emptyState) emptyState.classList.add('hidden');
+                articlesList.classList.remove('hidden');
+                
+                this.articles.forEach(article => {
+                    const articleElement = document.createElement('div');
+                    articleElement.className = 'article-item';
+                    articleElement.dataset.articleId = article.id;
+                    
+                    const imageSrc = article.processedImage || article.image || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yMCAyMEg0MFY0MEgyMFYyMFoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+';
+                    
+                    articleElement.innerHTML = `
+                        <img src="${imageSrc}" alt="${this.escapeHtml(article.name)}" class="article-thumbnail">
+                        <div class="article-info">
+                            <h4>${this.escapeHtml(article.name)}</h4>
+                            <div class="tags">${this.escapeHtml(article.tags || '')}</div>
+                        </div>
+                    `;
+                    
+                    // Add click handler
+                    articleElement.addEventListener('click', () => {
+                        this.selectArticleForSlot(article);
+                    });
+                    
+                    articlesList.appendChild(articleElement);
+                });
+            }
+            
+            // Show modal
+            modal.classList.remove('hidden');
+        } catch (error) {
+            console.error('Error showing select article modal:', error);
+            this.showToast('Error opening article selection. Please try again.', 'error');
+        }
+    }
+    
+    selectArticleForSlot(article) {
+        try {
+            if (!this.selectedSlotKey) {
+                console.error('No slot selected');
+                return;
+            }
+            
+            // Add article to slot
+            this.currentOutfitSlots[this.selectedSlotKey] = {
+                articleId: article.id,
+                name: article.name,
+                image: article.processedImage || article.image,
+                article: article
+            };
+            
+            // Update UI
+            this.renderSlots();
+            this.updateSaveButton();
+            
+            // Close modal
+            this.closeSelectArticleForSlotModal();
+            
+            // Show feedback
+            this.showToast(`Added ${article.name} to ${this.selectedSlotKey}`, 'success');
+        } catch (error) {
+            console.error('Error selecting article for slot:', error);
+            this.showToast('Error adding article. Please try again.', 'error');
+        }
+    }
+    
+    closeSelectArticleForSlotModal() {
+        try {
+            const modal = document.getElementById('selectArticleForSlotModal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+            this.selectedSlotKey = null;
+        } catch (error) {
+            console.error('Error closing select article modal:', error);
         }
     }
     
@@ -5853,8 +6037,35 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 window.app.user = user || null;
                 const authBtn = document.getElementById('authBtn');
+                const authBtnIcon = document.getElementById('authBtnIcon');
+                const authBtnText = document.getElementById('authBtnText');
+                const profileMenu = document.getElementById('profileMenu');
+                
                 if (authBtn) {
-                    authBtn.textContent = user ? 'Sign out' : 'Sign in';
+                    if (user) {
+                        // Show profile icon only, hide text
+                        if (authBtnIcon) {
+                            authBtnIcon.textContent = 'account_circle';
+                        }
+                        if (authBtnText) {
+                            authBtnText.style.display = 'none';
+                        }
+                        authBtn.classList.add('profile-icon-only');
+                    } else {
+                        // Show sign in text
+                        if (authBtnIcon) {
+                            authBtnIcon.textContent = 'account_circle';
+                        }
+                        if (authBtnText) {
+                            authBtnText.textContent = 'Sign in';
+                            authBtnText.style.display = 'inline';
+                        }
+                        authBtn.classList.remove('profile-icon-only');
+                        // Hide profile menu if open
+                        if (profileMenu) {
+                            profileMenu.classList.add('hidden');
+                        }
+                    }
                 }
                 const modal = document.getElementById('authModal');
                 if (modal) modal.classList.add('hidden');
