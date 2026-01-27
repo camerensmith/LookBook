@@ -17,3 +17,4 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_PROJECT_LOOKBOOK }}
           channelId: live
           projectId: project-lookbook
+          force: true
