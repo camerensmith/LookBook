@@ -1,57 +1,105 @@
 // Lookbook PWA Service Worker
 
-const CACHE_NAME = 'lookbook-v1';
-const urlsToCache = [
+const CACHE_NAME = 'lookbook-v2';
+const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/styles.css',
   '/app.js',
-  '/manifest.json'
+  '/manifest.json',
+  '/favicon.png',
+  '/wordmark.png',
+  '/wordmarklight.png'
 ];
 
-// Install event - cache resources
+// Install event – pre-cache static assets
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
+        console.log('[SW] Pre-caching static assets');
+        return cache.addAll(STATIC_ASSETS);
       })
+      .then(() => self.skipWaiting())
   );
 });
 
-// Fetch event - serve from cache when offline
+// Activate event – claim clients and remove outdated caches
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(cacheNames =>
+      Promise.all(
+        cacheNames
+          .filter(name => name !== CACHE_NAME)
+          .map(name => {
+            console.log('[SW] Removing old cache:', name);
+            return caches.delete(name);
+          })
+      )
+    ).then(() => self.clients.claim())
+  );
+});
+
+// Fetch event – Stale-While-Revalidate for same-origin assets;
+// Network-first for Firebase/external requests.
 self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+
+  // Skip non-GET requests and browser-extension requests
+  if (event.request.method !== 'GET' || !url.protocol.startsWith('http')) {
+    return;
+  }
+
+  // Network-first for Firebase API calls and external CDNs
+  const EXTERNAL_HOSTS = new Set([
+    'firestore.googleapis.com',
+    'firebase.googleapis.com',
+    'identitytoolkit.googleapis.com',
+    'securetoken.googleapis.com',
+    'googleapis.com',
+    'gstatic.com',
+    'fonts.googleapis.com',
+    'fonts.gstatic.com',
+    'cdn.skypack.dev',
+    'www.gstatic.com'
+  ]);
+
+  if (EXTERNAL_HOSTS.has(url.hostname)) {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Stale-While-Revalidate for same-origin assets
   event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Return cached version or fetch from network
-        if (response) {
-          return response;
-        }
-        return fetch(event.request);
-      }
+    caches.open(CACHE_NAME).then(cache =>
+      cache.match(event.request).then(cached => {
+        const networkFetch = fetch(event.request)
+          .then(response => {
+            if (response && response.status === 200) {
+              cache.put(event.request, response.clone());
+            }
+            return response;
+          })
+          .catch(err => {
+            if (cached) return cached;
+            // Return a minimal offline fallback when nothing is cached
+            return new Response('Offline – resource not available', {
+              status: 503,
+              statusText: 'Service Unavailable',
+              headers: { 'Content-Type': 'text/plain' }
+            });
+          });
+
+        // Return cached version immediately if available; background-refresh it
+        return cached || networkFetch;
+      })
     )
   );
 });
 
-// Activate event - clean up old caches
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
-  );
-});
-
-// Background sync for offline actions
+// Background sync for queued offline actions
 self.addEventListener('sync', event => {
   if (event.tag === 'background-sync') {
     event.waitUntil(doBackgroundSync());
@@ -60,10 +108,9 @@ self.addEventListener('sync', event => {
 
 async function doBackgroundSync() {
   try {
-    // Handle any pending offline actions
-    console.log('Background sync completed');
+    console.log('[SW] Background sync completed');
   } catch (error) {
-    console.error('Background sync failed:', error);
+    console.error('[SW] Background sync failed:', error);
   }
 }
 
@@ -79,16 +126,8 @@ self.addEventListener('push', event => {
       primaryKey: 1
     },
     actions: [
-      {
-        action: 'explore',
-        title: 'Open App',
-        icon: '/icons/icon-72x72.png'
-      },
-      {
-        action: 'close',
-        title: 'Close',
-        icon: '/icons/icon-72x72.png'
-      }
+      { action: 'explore', title: 'Open App', icon: '/icons/icon-72x72.png' },
+      { action: 'close',   title: 'Close',    icon: '/icons/icon-72x72.png' }
     ]
   };
 
@@ -102,8 +141,7 @@ self.addEventListener('notificationclick', event => {
   event.notification.close();
 
   if (event.action === 'explore') {
-    event.waitUntil(
-      clients.openWindow('/')
-    );
+    event.waitUntil(clients.openWindow('/'));
   }
 });
+

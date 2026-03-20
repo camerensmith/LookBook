@@ -8,17 +8,41 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Lookbook">
     <meta name="theme-color" content="#6366f1">
-    <title>Lookbook Alpha - Alice's Personal Style Manager</title>
+    <meta name="description" content="Lookbook – capture your closet, tag clothing articles, build outfits, and organise them into categories and collections. A fast, offline-capable PWA.">
+    <meta name="robots" content="noindex, nofollow">
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Lookbook – Personal Style Manager">
+    <meta property="og:description" content="Capture your closet, build outfits, and organize your style – offline-capable PWA.">
+    <meta property="og:image" content="wordmark.png">
+    <!-- Security -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    <title>Lookbook Alpha - Personal Style Manager</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <!-- Preload critical stylesheet -->
+    <link rel="preload" href="styles.css" as="style">
     <link rel="stylesheet" href="styles.css">
-    
+    <!-- Preload wordmark images used immediately in the header -->
+    <link rel="preload" href="wordmark.png" as="image">
+    <link rel="preload" href="wordmarklight.png" as="image">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <!-- Critical above-the-fold styles -->
+    <style>
+      /* Prevent flash of unstyled content for header */
+      body{margin:0;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f9fafb;min-height:100vh}
+      #app{min-height:100vh;display:flex;flex-direction:column}
+      .header{background:rgba(255,255,255,.98);padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
+      .wordmark-logo{height:28px;width:auto}
+    </style>
     
     <!-- Background Removal Package -->
     <script type="module">
@@ -31,8 +55,8 @@
         <!-- Header -->
                 <header class="header">
                     <div class="header-left">
-                        <img src="wordmark.png" alt="Lookbook" class="wordmark-logo wordmark-dark">
-                        <img src="wordmarklight.png" alt="Lookbook" class="wordmark-logo wordmark-light">
+                        <img src="wordmark.png" alt="Lookbook" class="wordmark-logo wordmark-dark" fetchpriority="high">
+                        <img src="wordmarklight.png" alt="Lookbook" class="wordmark-logo wordmark-light" fetchpriority="high">
                         <span id="versionDisplay" class="version-display" onclick="window.app.showVersionInfo()" title="Click for version info">Alpha</span>
                     </div>
                     <div class="header-controls">
@@ -93,7 +117,7 @@
                         </label>
                         <input type="file" id="categoryIcon" accept="image/*" style="display: none;">
                         <div id="categoryIconPreview" class="icon-preview hidden">
-                            <img id="categoryIconImg" src="" alt="Category Icon">
+                            <img id="categoryIconImg" src="" alt="Category Icon" loading="lazy">
                             <button type="button" id="removeCategoryIcon" class="remove-icon-btn">
                                 <span class="material-icons">close</span>
                             </button>
@@ -121,14 +145,14 @@
                         </button>
                     </div>
                     <div id="cameraPreview" class="camera-preview hidden">
-                        <img id="capturedImage" alt="Captured photo">
+                        <img id="capturedImage" alt="Captured photo" loading="lazy">
                         <div class="camera-controls">
                             <button id="retakeBtn" class="btn-secondary">Retake</button>
                             <button id="processBtn" class="btn-primary">Remove Background</button>
                         </div>
                     </div>
                     <div id="processedImage" class="processed-image hidden">
-                        <img id="finalImage" alt="Processed image">
+                        <img id="finalImage" alt="Processed image" loading="lazy">
                         <div class="image-controls">
                             <button id="reprocessBtn" class="btn-secondary">Reprocess</button>
                             <button id="saveBtn" class="btn-primary">Save Article</button>
@@ -320,7 +344,7 @@
                         </label>
                         <input type="file" id="collectionIcon" accept="image/*" style="display: none;">
                         <div id="collectionIconPreview" class="icon-preview hidden">
-                            <img id="collectionIconImg" src="" alt="Collection Icon">
+                            <img id="collectionIconImg" src="" alt="Collection Icon" loading="lazy">
                             <button type="button" id="removeCollectionIcon" class="remove-icon-btn">
                                 <span class="material-icons">close</span>
                             </button>
@@ -433,7 +457,7 @@
                         </div>
                     </div>
                     <div class="zoom-container">
-                        <img id="outfitZoomImage" alt="Outfit" style="max-width:100%; max-height:70vh; display:block; margin:auto;">
+                        <img id="outfitZoomImage" alt="Outfit" style="max-width:100%; max-height:70vh; display:block; margin:auto;" loading="lazy">
                         <div class="zoom-controls">
                             <button id="zoomInBtn" class="btn-secondary">+</button>
                             <button id="zoomOutBtn" class="btn-secondary">-</button>
@@ -736,6 +760,6 @@
         <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
         <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
         <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-    <script src="app.js"></script>
+    <script defer src="app.js"></script>
 </body>
 </html>

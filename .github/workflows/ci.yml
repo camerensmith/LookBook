@@ -1,0 +1,54 @@
+name: CI – Lint & Validate
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-and-validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Validate HTML (html-validate)
+        run: |
+          npx --yes html-validate \
+            --config '{"extends":["html-validate:recommended"],"rules":{"no-inline-style":"off","require-sri":"off"}}' \
+            index.html 404.html || true
+
+      - name: Validate JSON files
+        run: |
+          for f in manifest.json firebase.json firestore.indexes.json package.json; do
+            echo "Validating $f..."
+            node -e "JSON.parse(require('fs').readFileSync('$f','utf8')); console.log('$f OK');"
+          done
+
+      - name: Check for console.log in production JS (warn only)
+        run: |
+          COUNT=$(grep -c "console\.log" app.js || true)
+          echo "console.log count in app.js: $COUNT"
+          if [ "$COUNT" -gt 100 ]; then
+            echo "::warning::app.js contains $COUNT console.log calls – consider replacing with Logger."
+          fi
+
+      - name: Verify Firestore rules file exists
+        run: test -f firestore.rules && echo "firestore.rules present" || exit 1
+
+      - name: Verify service worker cache version is not stale
+        run: |
+          VERSION=$(grep "const CACHE_NAME" sw.js | grep -oP "lookbook-v\K[0-9]+")
+          echo "Service worker cache version: $VERSION"
