@@ -1,5 +1,29 @@
 // Lookbook PWA - Main Application Logic
 
+// ===== Structured Logger =====
+const Logger = (() => {
+    const LEVELS = { DEBUG: 0, INFO: 1, WARN: 2, ERROR: 3 };
+    const currentLevel = LEVELS.DEBUG;
+
+    function _log(level, levelName, ...args) {
+        if (level < currentLevel) return;
+        const ts = new Date().toISOString();
+        const prefix = `[Lookbook][${ts}][${levelName}]`;
+        switch (levelName) {
+            case 'WARN':  console.warn(prefix, ...args);  break;
+            case 'ERROR': console.error(prefix, ...args); break;
+            default:      console.log(prefix, ...args);
+        }
+    }
+
+    return {
+        debug: (...args) => _log(LEVELS.DEBUG, 'DEBUG', ...args),
+        info:  (...args) => _log(LEVELS.INFO,  'INFO',  ...args),
+        warn:  (...args) => _log(LEVELS.WARN,  'WARN',  ...args),
+        error: (...args) => _log(LEVELS.ERROR, 'ERROR', ...args)
+    };
+})();
+
 class LookbookApp {
     constructor() {
         // App version
