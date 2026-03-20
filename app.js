@@ -6096,6 +6096,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// Expose LookbookApp for unit testing in Node.js/Jest environments
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { LookbookApp };
+}
+
 // Service Worker Registration for PWA
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
